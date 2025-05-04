@@ -1,5 +1,6 @@
-pub mod client;
-pub mod core;
-pub mod server;
+pub mod api;
+pub mod db;
+pub mod model;
+pub mod utils;
 
-pub use core::*;
+pub use model::*;

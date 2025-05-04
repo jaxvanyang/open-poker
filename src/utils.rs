@@ -13,13 +13,6 @@ macro_rules! say {
 #[macro_export]
 macro_rules! sprintln {
 	($($arg:tt)*) => {
-		$crate::say!("server", $($arg)*)
-	};
-}
-
-#[macro_export]
-macro_rules! cprintln {
-	($($arg:tt)*) => {
-		$crate::say!("client", $($arg)*)
+		$crate::say!("system", $($arg)*)
 	};
 }

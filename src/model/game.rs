@@ -1,3 +1,5 @@
+use crate::Table;
+
 use super::{Action, Card, Deck, Player, Record, Records};
 
 #[derive(Debug, PartialEq)]
@@ -6,10 +8,12 @@ pub enum Round {
 	Flop,
 	Turn,
 	River,
+	Finish,
 }
 
 #[derive(Debug)]
 pub struct Game {
+	pub id: usize,
 	pub players: Vec<Player>,
 	pub current: usize,
 	pub max_bet: usize,
@@ -21,11 +25,14 @@ pub struct Game {
 }
 
 impl Game {
-	pub fn new(players: Vec<Player>, sb: usize) -> Self {
-		assert!(2 <= players.len() && players.len() <= 10);
+	pub const MIN_STACK: usize = 10;
+
+	pub fn new(players: Vec<Player>) -> Self {
+		assert!(2 <= players.len() && players.len() <= Table::MAX_SEATS);
 		Self {
+			id: 1,
 			players,
-			current: sb,
+			current: 0,
 			max_bet: 0,
 			pot: 0,
 			round: Round::PreFlop,
@@ -144,7 +151,7 @@ impl Game {
 
 	pub fn start(&mut self) {
 		assert!(self.pot == 0);
-		assert!(self.players.iter().all(|p| p.stack >= 10));
+		assert!(self.players.iter().all(|p| p.stack >= Self::MIN_STACK));
 		for player in &mut self.players {
 			player.hand.push(self.deck.pop().unwrap());
 			player.hand.push(self.deck.pop().unwrap());
@@ -159,10 +166,17 @@ impl Game {
 				for _ in 0..3 {
 					self.public.push(self.deck.pop().unwrap());
 				}
+				self.round = Round::Flop;
 			}
-			Round::Flop => self.public.push(self.deck.pop().unwrap()),
-			Round::Turn => self.public.push(self.deck.pop().unwrap()),
-			Round::River => panic!(),
+			Round::Flop => {
+				self.public.push(self.deck.pop().unwrap());
+				self.round = Round::Turn;
+			}
+			Round::Turn => {
+				self.public.push(self.deck.pop().unwrap());
+				self.round = Round::River;
+			}
+			_ => panic!(),
 		}
 		self.records.push(Record {
 			seat: self.current,

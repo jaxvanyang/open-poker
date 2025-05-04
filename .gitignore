@@ -1,2 +1,4 @@
+*.db3
 /.zed
 /target
+atac.log

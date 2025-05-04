@@ -1,22 +1,15 @@
-use actix_web::{App, HttpServer, web};
-use open_poker::server::*;
-use open_poker::*;
+use actix_web::{App, HttpServer};
+use open_poker::api::*;
+use open_poker::db;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-	let user_db = web::Data::new(UserDb::default());
-	let table_db = web::Data::new(TableDb::default());
+	tracing_subscriber::fmt::init();
 
-	let server = HttpServer::new(move || {
-		App::new()
-			.app_data(user_db.clone())
-			.app_data(table_db.clone())
-			.service(login)
-			.service(new)
-			.service(join)
-	})
-	.bind(("127.0.0.1", 12345))?;
+	db::init().map_err(|err| std::io::Error::other(err))?;
 
-	sprintln!("start running...");
+	let server =
+		HttpServer::new(move || App::new().service(guest_api())).bind(("127.0.0.1", 12345))?;
+
 	server.run().await
 }
