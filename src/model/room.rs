@@ -1,29 +1,28 @@
+use serde::Serialize;
+
 use super::Guest;
 
-#[derive(Debug, Clone)]
-pub struct Table {
-	pub id: String,
+#[derive(Debug, Clone, Serialize)]
+pub struct Room {
+	pub id: usize,
 	pub seats: [Option<Guest>; Self::MAX_SEATS],
 	pub sb: usize,
-	/// Current game ID, None if not started
-	pub game_id: Option<usize>,
 }
 
-impl Table {
+impl Room {
 	pub const MAX_SEATS: usize = 10;
 
-	pub fn new() -> Self {
+	pub fn new(id: usize) -> Self {
 		Self {
-			id: "1".to_string(),
+			id,
 			seats: [const { None }; Self::MAX_SEATS],
 			sb: 0,
-			game_id: None,
 		}
 	}
 
-	pub fn with_user(user: &Guest) -> Self {
-		let mut table = Self::new();
-		table.seats[0] = Some(user.clone());
+	pub fn with_guest(id: usize, guest: &Guest) -> Self {
+		let mut table = Self::new(id);
+		table.seats[0] = Some(guest.clone());
 		table
 	}
 

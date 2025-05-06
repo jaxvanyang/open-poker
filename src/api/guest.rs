@@ -3,7 +3,7 @@ use serde::Deserialize;
 use serde_json::json;
 use tracing::{error, info};
 
-use crate::db::{error::internal_server_error, new_guest_and_token};
+use crate::{db::new_guest_and_token, error::internal_server_error};
 
 #[derive(Deserialize)]
 struct LoginForm {
@@ -16,7 +16,7 @@ pub async fn login(form: web::Form<LoginForm>) -> actix_web::Result<HttpResponse
 
 	let (guest, token) = new_guest_and_token(&form.name).map_err(|err| {
 		error!(name = form.name, "{err}");
-		internal_server_error("failed to create guest")
+		internal_server_error("failed to create guest, please retry")
 	})?;
 
 	Ok(HttpResponse::Created().json(json!({

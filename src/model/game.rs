@@ -1,4 +1,4 @@
-use crate::Table;
+use crate::Room;
 
 use super::{Action, Card, Deck, Player, Record, Records};
 
@@ -28,7 +28,7 @@ impl Game {
 	pub const MIN_STACK: usize = 10;
 
 	pub fn new(players: Vec<Player>) -> Self {
-		assert!(2 <= players.len() && players.len() <= Table::MAX_SEATS);
+		assert!(2 <= players.len() && players.len() <= Room::MAX_SEATS);
 		Self {
 			id: 1,
 			players,

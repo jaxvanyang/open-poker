@@ -3,9 +3,10 @@ use rusqlite::{OptionalExtension, Transaction};
 
 use crate::Guest;
 
-use super::open_connection;
+use super::{max_id, open_connection};
+use crate::error::Result;
 
-pub fn has_guest_token(tx: &Transaction, token: &str) -> anyhow::Result<bool> {
+pub fn has_guest_token(tx: &Transaction, token: &str) -> Result<bool> {
 	let result = tx
 		.query_row(
 			"select * from guest_token where token = ?1",
@@ -18,22 +19,19 @@ pub fn has_guest_token(tx: &Transaction, token: &str) -> anyhow::Result<bool> {
 	Ok(result)
 }
 
-pub fn new_guest(tx: &Transaction, name: &str) -> anyhow::Result<Guest> {
-	let max_id: usize = tx
-		.query_row(
-			"select id from guest order by id desc limit 1;",
-			(),
-			|row| row.get(0),
-		)
-		.optional()?
-		.unwrap_or(0);
+pub fn max_guest_id(tx: &Transaction) -> Result<usize> {
+	max_id(tx, "guest")
+}
+
+pub fn new_guest(tx: &Transaction, name: &str) -> Result<Guest> {
+	let max_id = max_guest_id(tx)?;
 	let id = max_id + 1;
 	tx.execute("insert into guest(id, name) values(?1, ?2)", (id, name))?;
 
 	Ok(Guest::new(id, name))
 }
 
-pub fn new_guest_token(tx: &Transaction, guest: &Guest) -> anyhow::Result<String> {
+pub fn new_guest_token(tx: &Transaction, guest: &Guest) -> Result<String> {
 	let mut rng = rand::rng();
 	let mut token: String;
 	loop {
@@ -50,7 +48,7 @@ pub fn new_guest_token(tx: &Transaction, guest: &Guest) -> anyhow::Result<String
 	Ok(token)
 }
 
-pub fn new_guest_and_token(name: &str) -> anyhow::Result<(Guest, String)> {
+pub fn new_guest_and_token(name: &str) -> Result<(Guest, String)> {
 	let mut conn = open_connection()?;
 	let tx = conn.transaction()?;
 
@@ -60,6 +58,28 @@ pub fn new_guest_and_token(name: &str) -> anyhow::Result<(Guest, String)> {
 	tx.commit()?;
 
 	Ok((guest, token))
+}
+
+/// Get guest by token
+///
+/// # Return
+///
+/// None if guest not found
+pub fn guest_by_token(tx: &Transaction, token: &str) -> Result<Option<Guest>> {
+	Ok(tx
+		.query_row(
+			"select g.id, name, bankroll from guest as g, guest_token as t
+				where g.id = t.id and t.token = ?1",
+			(token,),
+			|row| {
+				Ok(Guest {
+					id: row.get(0)?,
+					name: row.get(1)?,
+					bankroll: row.get(2)?,
+				})
+			},
+		)
+		.optional()?)
 }
 
 #[cfg(test)]
@@ -72,7 +92,10 @@ mod tests {
 	fn login() {
 		db::init().unwrap();
 		for _ in 0..10 {
-			new_guest_and_token("bob").unwrap();
+			let (guest, token) = new_guest_and_token("bob").unwrap();
+			let mut conn = open_connection().unwrap();
+			let tx = conn.transaction().unwrap();
+			assert_eq!(guest, guest_by_token(&tx, &token).unwrap().unwrap());
 		}
 	}
 

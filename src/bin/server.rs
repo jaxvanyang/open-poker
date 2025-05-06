@@ -8,8 +8,8 @@ async fn main() -> std::io::Result<()> {
 
 	db::init().map_err(|err| std::io::Error::other(err))?;
 
-	let server =
-		HttpServer::new(move || App::new().service(guest_api())).bind(("127.0.0.1", 12345))?;
+	let server = HttpServer::new(move || App::new().service(guest_api()).service(room_api()))
+		.bind(("127.0.0.1", 12345))?;
 
 	server.run().await
 }
