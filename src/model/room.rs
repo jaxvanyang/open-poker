@@ -47,20 +47,30 @@ impl Room {
 	// 	count >= 2
 	// }
 
-	pub fn insert(&mut self, user: Guest) {
-		assert!(self.count() < Self::MAX_SEATS);
-		let mut empty = 0;
-		for i in 0..Self::MAX_SEATS {
+	/// Let the guest join the room
+	///
+	/// # Return
+	///
+	/// Seat position of the new guest, None if room is full or the user already in
+	pub fn insert(&mut self, guest: Guest) -> Option<usize> {
+		let mut empty = Self::MAX_SEATS;
+		for i in (0..Self::MAX_SEATS).rev() {
 			match &self.seats[i] {
 				Some(u) => {
-					if u.id == user.id {
-						panic!();
+					if u.id == guest.id {
+						return None;
 					}
 				}
 				None => empty = i,
 			}
 		}
-		self.seats[empty] = Some(user);
+
+		if empty == Self::MAX_SEATS {
+			None
+		} else {
+			self.seats[empty] = Some(guest);
+			Some(empty)
+		}
 	}
 
 	/// Return if the user is on the table

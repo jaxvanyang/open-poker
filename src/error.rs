@@ -9,6 +9,8 @@ pub enum ErrorType {
 	InternalServerError,
 	DatabaseError,
 	UnauthorizedError,
+	ConflictError,
+	NotFoundError,
 }
 
 impl Display for ErrorType {
@@ -17,6 +19,8 @@ impl Display for ErrorType {
 			ErrorType::InternalServerError => write!(f, "internal server error"),
 			ErrorType::DatabaseError => write!(f, "database error"),
 			ErrorType::UnauthorizedError => write!(f, "unauthorized"),
+			ErrorType::ConflictError => write!(f, "conflict"),
+			ErrorType::NotFoundError => write!(f, "not found"),
 		}
 	}
 }
@@ -44,6 +48,8 @@ impl actix_web::ResponseError for Error {
 				StatusCode::INTERNAL_SERVER_ERROR
 			}
 			ErrorType::UnauthorizedError => StatusCode::UNAUTHORIZED,
+			ErrorType::ConflictError => StatusCode::CONFLICT,
+			ErrorType::NotFoundError => StatusCode::NOT_FOUND,
 		}
 	}
 
@@ -52,13 +58,25 @@ impl actix_web::ResponseError for Error {
 			&self.msg
 		} else {
 			match self.r#type {
-				ErrorType::InternalServerError | ErrorType::UnauthorizedError => &self.msg,
+				ErrorType::InternalServerError
+				| ErrorType::UnauthorizedError
+				| ErrorType::ConflictError
+				| ErrorType::NotFoundError => &self.msg,
 				ErrorType::DatabaseError => "something went wrong, please retry",
 			}
 		};
 		HttpResponse::build(self.status_code()).json(json!({
 			"error": msg
 		}))
+	}
+}
+
+impl From<rusqlite::Error> for Error {
+	fn from(err: rusqlite::Error) -> Self {
+		Self {
+			r#type: ErrorType::DatabaseError,
+			msg: err.to_string(),
+		}
 	}
 }
 
@@ -76,11 +94,16 @@ pub fn unauthorized_error(msg: impl Display) -> Error {
 	}
 }
 
-impl From<rusqlite::Error> for Error {
-	fn from(err: rusqlite::Error) -> Self {
-		Self {
-			r#type: ErrorType::DatabaseError,
-			msg: err.to_string(),
-		}
+pub fn conflict_error(msg: impl Display) -> Error {
+	Error {
+		r#type: ErrorType::ConflictError,
+		msg: msg.to_string(),
+	}
+}
+
+pub fn not_found_error(msg: impl Display) -> Error {
+	Error {
+		r#type: ErrorType::NotFoundError,
+		msg: msg.to_string(),
 	}
 }

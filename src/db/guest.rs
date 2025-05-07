@@ -60,6 +60,27 @@ pub fn new_guest_and_token(name: &str) -> Result<(Guest, String)> {
 	Ok((guest, token))
 }
 
+/// Get guest by ID
+///
+/// # Return
+///
+/// None if guest not found
+pub fn guest_by_id(tx: &Transaction, id: usize) -> Result<Option<Guest>> {
+	Ok(tx
+		.query_row(
+			"select name, bankroll from guest where id = ?1",
+			(id,),
+			|row| {
+				Ok(Guest {
+					id,
+					name: row.get(0)?,
+					bankroll: row.get(1)?,
+				})
+			},
+		)
+		.optional()?)
+}
+
 /// Get guest by token
 ///
 /// # Return
@@ -90,7 +111,7 @@ mod tests {
 
 	#[test]
 	fn login() {
-		db::init().unwrap();
+		db::init();
 		for _ in 0..10 {
 			let (guest, token) = new_guest_and_token("bob").unwrap();
 			let mut conn = open_connection().unwrap();
@@ -101,13 +122,13 @@ mod tests {
 
 	#[test]
 	fn name_too_short() {
-		db::init().unwrap();
+		db::init();
 		assert!(new_guest_and_token("a").is_err());
 	}
 
 	#[test]
 	fn name_too_long() {
-		db::init().unwrap();
+		db::init();
 		let name: String = ['a'; 33].iter().collect();
 		assert!(new_guest_and_token(&name).is_err());
 	}
