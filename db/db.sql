@@ -1,3 +1,5 @@
+drop table if exists ready;
+
 drop table if exists seat;
 
 drop table if exists room;
@@ -38,4 +40,10 @@ create table seat (
 	guest_id integer references guest (id),
 	unique (room_id, guest_id),
 	unique (room_id, position)
+) strict;
+
+create table ready (
+	room_id integer references room (id),
+	guest_id integer references guest (id),
+	unique (room_id, guest_id)
 ) strict;

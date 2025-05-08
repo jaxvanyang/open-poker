@@ -2,10 +2,19 @@ use serde::Serialize;
 
 use super::Guest;
 
+/// Guest and ready status
+type RoomGuest = (Guest, bool);
+
+impl From<Guest> for RoomGuest {
+	fn from(guest: Guest) -> Self {
+		(guest, false)
+	}
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Room {
 	pub id: usize,
-	pub seats: [Option<Guest>; Self::MAX_SEATS],
+	pub seats: [Option<RoomGuest>; Self::MAX_SEATS],
 	pub sb: usize,
 }
 
@@ -22,7 +31,7 @@ impl Room {
 
 	pub fn with_guest(id: usize, guest: &Guest) -> Self {
 		let mut table = Self::new(id);
-		table.seats[0] = Some(guest.clone());
+		table.seats[0] = Some(guest.clone().into());
 		table
 	}
 
@@ -56,8 +65,8 @@ impl Room {
 		let mut empty = Self::MAX_SEATS;
 		for i in (0..Self::MAX_SEATS).rev() {
 			match &self.seats[i] {
-				Some(u) => {
-					if u.id == guest.id {
+				Some((g, _)) => {
+					if g.id == guest.id {
 						return None;
 					}
 				}
@@ -68,16 +77,16 @@ impl Room {
 		if empty == Self::MAX_SEATS {
 			None
 		} else {
-			self.seats[empty] = Some(guest);
+			self.seats[empty] = Some(guest.into());
 			Some(empty)
 		}
 	}
 
-	/// Return if the user is on the table
-	pub fn has_user(&mut self, user_id: usize) -> bool {
-		for user in &self.seats {
-			if let Some(user) = user.as_ref() {
-				if user.id == user_id {
+	/// Return if the guest is on the table
+	pub fn has_guest(&mut self, guest_id: usize) -> bool {
+		for guest in &self.seats {
+			if let Some((guest, _)) = guest.as_ref() {
+				if guest.id == guest_id {
 					return true;
 				}
 			}
@@ -85,18 +94,55 @@ impl Room {
 		false
 	}
 
-	// Mark the user ready
-	// pub fn ready(&mut self, user_id: &str) {
-	// 	for user in &mut self.seats {
-	// 		if let Some(user) = user.as_mut() {
-	// 			if user.id == user_id {
-	// 				user.ready = true;
-	// 				return;
-	// 			}
-	// 		}
-	// 	}
-	// 	panic!()
-	// }
+	/// Whether the guest is ready
+	///
+	/// # Return
+	///
+	/// None if not found
+	pub fn is_ready(&mut self, guest_id: usize) -> Option<bool> {
+		for guest in &self.seats {
+			if let Some((guest, ready)) = guest.as_ref() {
+				if guest.id == guest_id {
+					return Some(*ready);
+				}
+			}
+		}
+		None
+	}
+
+	/// Set the guest to ready status
+	///
+	/// # Return
+	///
+	/// Seat position of the guest, None if not found
+	pub fn ready(&mut self, guest_id: usize) -> Option<usize> {
+		for (i, guest) in &mut self.seats.iter_mut().enumerate() {
+			if let Some((guest, ready)) = guest.as_mut() {
+				if guest.id == guest_id {
+					*ready = true;
+					return Some(i);
+				}
+			}
+		}
+		None
+	}
+
+	/// Set the guest to unready status
+	///
+	/// # Return
+	///
+	/// Seat position of the guest, None if not found
+	pub fn unready(&mut self, guest_id: usize) -> Option<usize> {
+		for (i, guest) in &mut self.seats.iter_mut().enumerate() {
+			if let Some((guest, ready)) = guest.as_mut() {
+				if guest.id == guest_id {
+					*ready = false;
+					return Some(i);
+				}
+			}
+		}
+		None
+	}
 
 	// pub fn new_game(&mut self) -> Game {
 	// 	assert!(self.should_start());

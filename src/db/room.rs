@@ -20,6 +20,19 @@ pub fn new_room(tx: &Transaction, guest: &Guest) -> Result<Room> {
 	Ok(room)
 }
 
+/// Whether the guest is ready in the room
+pub fn is_ready(tx: &Transaction, room_id: usize, guest_id: usize) -> Result<bool> {
+	let ready = tx
+		.query_row(
+			"select count(*) from ready where room_id = ?1 and guest_id = ?2",
+			(room_id, guest_id),
+			|_| Ok(true),
+		)
+		.optional()?
+		.unwrap_or(false);
+	Ok(ready)
+}
+
 /// Get room by ID
 ///
 /// # Return
@@ -42,7 +55,8 @@ pub fn room_by_id(tx: &Transaction, id: usize) -> Result<Option<Room>> {
 
 	for row in rows {
 		let (position, guest_id) = row?;
-		room.seats[position] = guest_by_id(tx, guest_id)?;
+		let ready = is_ready(tx, id, guest_id)?;
+		room.seats[position] = guest_by_id(tx, guest_id)?.map(|g| (g, ready));
 	}
 
 	Ok(Some(room))
