@@ -99,7 +99,7 @@ impl Room {
 	/// # Return
 	///
 	/// None if not found
-	pub fn is_ready(&mut self, guest_id: usize) -> Option<bool> {
+	pub fn is_ready(&self, guest_id: usize) -> Option<bool> {
 		for guest in &self.seats {
 			if let Some((guest, ready)) = guest.as_ref() {
 				if guest.id == guest_id {

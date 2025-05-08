@@ -22,15 +22,12 @@ pub fn new_room(tx: &Transaction, guest: &Guest) -> Result<Room> {
 
 /// Whether the guest is ready in the room
 pub fn is_ready(tx: &Transaction, room_id: usize, guest_id: usize) -> Result<bool> {
-	let ready = tx
-		.query_row(
-			"select count(*) from ready where room_id = ?1 and guest_id = ?2",
-			(room_id, guest_id),
-			|_| Ok(true),
-		)
-		.optional()?
-		.unwrap_or(false);
-	Ok(ready)
+	let count: usize = tx.query_row(
+		"select count(*) from ready where room_id = ?1 and guest_id = ?2",
+		(room_id, guest_id),
+		|row| row.get(0),
+	)?;
+	Ok(count == 1)
 }
 
 /// Get room by ID
