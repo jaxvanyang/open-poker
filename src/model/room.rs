@@ -39,7 +39,7 @@ impl Room {
 			}
 		}
 
-		unreachable!()
+		panic!("game finished")
 	}
 
 	/// Pass sb to the next guest

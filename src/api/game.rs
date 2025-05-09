@@ -7,13 +7,10 @@ use tracing::info;
 use crate::{
 	Round,
 	db::{
-		bet as execute_bet, game_by_id, get_flop, get_hand, get_river, get_turn, guest_by_id,
-		guest_by_token, new_transaction, open_connection, room_by_id,
+		bet as execute_bet, fold as execute_fold, game_by_id, get_flop, get_hand, get_river,
+		get_turn, guest_by_id, guest_by_token, new_transaction, open_connection, room_by_id,
 	},
-	error::{
-		Result, bad_request_error, conflict_error, forbidden_error, not_found_error,
-		unauthorized_error,
-	},
+	error::{Result, bad_request_error, forbidden_error, not_found_error, unauthorized_error},
 };
 
 #[derive(Deserialize)]
@@ -37,17 +34,46 @@ pub async fn bet(
 	let mut game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
 
 	if game.is_finished() {
-		return Err(conflict_error("game is already finished"));
+		return Err(forbidden_error("game is already finished"));
 	}
 
 	let mut room = room_by_id(&tx, game.room_id)?.unwrap();
 	let player = room.get_player(game.position);
 
 	if guest.id != player.id {
-		return Err(conflict_error("it's not your turn, please wait"));
+		return Err(forbidden_error("it's not your turn, please wait"));
 	}
 
 	execute_bet(&tx, &mut room, &mut game, form.chips)?;
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Created().json(json!({"room": room, "game": game})))
+}
+
+#[post("/{game_id}/fold")]
+pub async fn fold(auth: BearerAuth, path: web::Path<usize>) -> Result<HttpResponse> {
+	let game_id = path.into_inner();
+	info!("post: fold for game {game_id}");
+
+	let mut conn = open_connection()?;
+	let tx = new_transaction(&mut conn)?;
+
+	let guest = guest_by_token(&tx, auth.token())?.ok_or(unauthorized_error("invalid token"))?;
+	let mut game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+
+	if game.is_finished() {
+		return Err(forbidden_error("game is already finished"));
+	}
+
+	let mut room = room_by_id(&tx, game.room_id)?.unwrap();
+	let player = room.get_player(game.position);
+
+	if guest.id != player.id {
+		return Err(forbidden_error("it's not your turn, please wait"));
+	}
+
+	execute_fold(&tx, &mut room, &mut game)?;
 
 	tx.commit()?;
 
@@ -142,6 +168,7 @@ pub async fn river(path: web::Path<usize>) -> Result<HttpResponse> {
 pub fn game_api() -> actix_web::Scope {
 	web::scope("/games")
 		.service(bet)
+		.service(fold)
 		.service(hand)
 		.service(flop)
 		.service(turn)
