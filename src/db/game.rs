@@ -1,4 +1,4 @@
-use crate::{Card, Game, Room, Round, error::Result};
+use crate::{Card, Game, Room, error::Result};
 use rusqlite::{OptionalExtension, Transaction};
 
 use super::{bet, max_id};
@@ -8,6 +8,10 @@ pub fn max_game_id(tx: &Transaction) -> Result<usize> {
 }
 
 pub fn new_game(tx: &Transaction, room: &mut Room) -> Result<Game> {
+	// correct room first
+	room.correct();
+	tx.execute("update room set sb = ?1 where id = ?2", (room.sb, room.id))?;
+
 	let id = max_game_id(tx)? + 1;
 	tx.execute(
 		"insert into game (id, room_id, position) values (?1, ?2, ?3)",
@@ -66,15 +70,16 @@ pub fn new_game(tx: &Transaction, room: &mut Room) -> Result<Game> {
 pub fn game_by_id(tx: &Transaction, id: usize) -> Result<Option<Game>> {
 	Ok(tx
 		.query_row(
-			"select room_id, round, pot, position from game where id = ?1",
+			"select room_id, round, pot, position, raise_position from game where id = ?1",
 			(id,),
 			|row| {
 				Ok(Game {
 					id,
 					room_id: row.get(0)?,
-					round: Round::parse(row.get::<usize, String>(1)?.as_str()),
+					round: row.get(1)?,
 					pot: row.get(2)?,
 					position: row.get(3)?,
+					raise_position: row.get(4)?,
 				})
 			},
 		)

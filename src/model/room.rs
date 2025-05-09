@@ -6,6 +6,7 @@ use super::{Game, Guest, Seat};
 pub struct Room {
 	pub id: usize,
 	pub seats: [Option<Seat>; Self::MAX_SEATS],
+	/// The position of small blind
 	pub sb: usize,
 }
 
@@ -26,33 +27,28 @@ impl Room {
 		table
 	}
 
-	/// Get the player (not folded or allined) on or after the position
-	pub fn get_player(&self, position: usize) -> &Guest {
-		let mut p = position;
-		for _ in 0..Self::MAX_SEATS {
-			p = (p + 1) % Self::MAX_SEATS;
-			if let Some(seat) = &self.seats[p] {
-				if seat.fold || seat.allin() {
-					continue;
-				}
-				return &seat.guest;
+	pub fn get_guest(&self, position: usize) -> Option<&Guest> {
+		self.seats[position].as_ref().map(|s| &s.guest)
+	}
+
+	/// Correct the sb position
+	pub fn correct(&mut self) {
+		let mut sb;
+		for i in 0..Self::MAX_SEATS {
+			sb = (self.sb + i) % Self::MAX_SEATS;
+			if self.seats[sb].is_some() {
+				self.sb = sb;
+				return;
 			}
 		}
 
-		panic!("game finished")
+		panic!("no player in the room");
 	}
 
 	/// Pass sb to the next guest
 	pub fn pass_sb(&mut self) {
-		let mut sb = 0;
-		for i in 1..Self::MAX_SEATS {
-			sb = (self.sb + i) % Self::MAX_SEATS;
-			if self.seats[sb].is_some() {
-				break;
-			}
-		}
-
-		self.sb = sb;
+		self.sb += 1;
+		self.correct();
 	}
 
 	/// Number of users
@@ -178,5 +174,16 @@ impl Room {
 		self.sb = (sb + 1) % Self::MAX_SEATS;
 
 		Game::new(game_id, self.id, self.sb)
+	}
+
+	pub fn max_bet(&self) -> usize {
+		let mut max_bet = 0;
+		for i in 0..Self::MAX_SEATS {
+			if let Some(seat) = &self.seats[i] {
+				max_bet = max_bet.max(seat.bet);
+			}
+		}
+
+		max_bet
 	}
 }

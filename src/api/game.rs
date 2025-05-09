@@ -38,7 +38,7 @@ pub async fn bet(
 	}
 
 	let mut room = room_by_id(&tx, game.room_id)?.unwrap();
-	let player = room.get_player(game.position);
+	let player = room.get_guest(game.position).unwrap();
 
 	if guest.id != player.id {
 		return Err(forbidden_error("it's not your turn, please wait"));
@@ -67,7 +67,7 @@ pub async fn fold(auth: BearerAuth, path: web::Path<usize>) -> Result<HttpRespon
 	}
 
 	let mut room = room_by_id(&tx, game.room_id)?.unwrap();
-	let player = room.get_player(game.position);
+	let player = room.get_guest(game.position).unwrap();
 
 	if guest.id != player.id {
 		return Err(forbidden_error("it's not your turn, please wait"));

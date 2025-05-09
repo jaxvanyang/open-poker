@@ -1,7 +1,7 @@
 use rusqlite::{OptionalExtension, Transaction};
 
 use crate::db::game_by_id;
-use crate::error::Result;
+use crate::error::{Result, conflict_error};
 use crate::{Game, Guest, Room, Seat};
 
 use super::{guest_by_id, max_id};
@@ -100,36 +100,31 @@ pub fn get_games(
 
 /// Bet as the current player of the game
 pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> Result<()> {
-	let mut position = 0;
-	for i in 0..Room::MAX_SEATS {
-		position = (game.position + i) % Room::MAX_SEATS;
-		if let Some(seat) = &mut room.seats[position] {
-			if seat.fold || seat.allin() {
-				continue;
-			}
+	let max_bet = room.max_bet();
+	let seat = room.seats[game.position].as_mut().unwrap();
 
-			assert!(chips <= seat.stack);
-			seat.stack -= chips;
-			seat.bet += chips;
-			game.pot += chips;
-			tx.execute(
-				"update seat set (stack, bet) = (?1, ?2) where room_id = ?3 and guest_id = ?4",
-				(seat.stack, seat.bet, room.id, seat.guest.id),
-			)?;
-			tx.execute(
-				"update game set pot = ?1 where id = ?2",
-				(game.pot, game.id),
-			)?;
-
-			break;
-		}
+	assert!(chips <= seat.stack);
+	seat.stack -= chips;
+	seat.bet += chips;
+	if seat.bet > max_bet {
+		game.raise_position = game.position;
+	} else if !seat.allin() {
+		return Err(conflict_error("should bet more"));
 	}
+	game.pot += chips;
+	tx.execute(
+		"update seat set (stack, bet) = (?1, ?2) where room_id = ?3 and guest_id = ?4",
+		(seat.stack, seat.bet, room.id, seat.guest.id),
+	)?;
+	tx.execute(
+		"update game set pot = ?1 where id = ?2",
+		(game.pot, game.id),
+	)?;
 
-	position = (position + 1) % Room::MAX_SEATS;
-	game.position = position;
+	game.pass(&room)?;
 	tx.execute(
 		"update game set position = ?1 where id = ?2",
-		(position, game.id),
+		(game.position, game.id),
 	)?;
 
 	Ok(())
@@ -137,29 +132,18 @@ pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> 
 
 /// Fold as the current player of the game
 pub fn fold(tx: &Transaction, room: &mut Room, game: &mut Game) -> Result<()> {
-	let mut position = 0;
-	for i in 0..Room::MAX_SEATS {
-		position = (game.position + i) % Room::MAX_SEATS;
-		if let Some(seat) = &mut room.seats[position] {
-			if seat.fold || seat.allin() {
-				continue;
-			}
+	let seat = room.seats[game.position].as_mut().unwrap();
+	assert_eq!(seat.fold, false);
+	seat.fold = true;
+	tx.execute(
+		"update seat set fold = true where room_id = ?1 and guest_id = ?2",
+		(room.id, seat.guest.id),
+	)?;
 
-			seat.fold = true;
-			tx.execute(
-				"update seat set fold = true where room_id = ?1 and guest_id = ?2",
-				(room.id, seat.guest.id),
-			)?;
-
-			break;
-		}
-	}
-
-	position = (position + 1) % Room::MAX_SEATS;
-	game.position = position;
+	game.pass(&room)?;
 	tx.execute(
 		"update game set position = ?1 where id = ?2",
-		(position, game.id),
+		(game.position, game.id),
 	)?;
 
 	Ok(())

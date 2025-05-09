@@ -1,4 +1,8 @@
+use rusqlite::types::FromSql;
 use serde::Serialize;
+
+use super::Room;
+use crate::error::{Result, forbidden_error};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, PartialOrd, Ord)]
 pub enum Round {
@@ -23,13 +27,22 @@ impl Round {
 	}
 }
 
+impl FromSql for Round {
+	fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+		Ok(Self::parse(value.as_str().unwrap()))
+	}
+}
+
 #[derive(Debug, Serialize)]
 pub struct Game {
 	pub id: usize,
 	pub room_id: usize,
 	pub round: Round,
 	pub pot: usize,
+	/// Current player's position
 	pub position: usize,
+	/// Position of the first raise player
+	pub raise_position: usize,
 }
 
 impl Game {
@@ -40,11 +53,35 @@ impl Game {
 			round: Round::PreFlop,
 			pot: 0,
 			position: sb,
+			raise_position: sb,
 		}
 	}
 
 	pub fn is_finished(&self) -> bool {
 		self.round == Round::Finish
+	}
+
+	/// Correct player position
+	pub fn correct(&mut self, room: &Room) -> Result<()> {
+		let mut p;
+		for i in 0..Room::MAX_SEATS {
+			p = (self.position + i) % Room::MAX_SEATS;
+			if let Some(seat) = &room.seats[p] {
+				if seat.fold || seat.allin() {
+					continue;
+				}
+				self.position = p;
+				return Ok(());
+			}
+		}
+
+		Err(forbidden_error("invalid operation"))
+	}
+
+	/// Pass control to the next player
+	pub fn pass(&mut self, room: &Room) -> Result<()> {
+		self.position += 1;
+		self.correct(room)
 	}
 }
 

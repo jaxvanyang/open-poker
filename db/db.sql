@@ -47,6 +47,10 @@ create table game (
 		0 <= position
 		and position < 10
 	),
+	raise_position integer not null default 0 check (
+		0 <= raise_position
+		and raise_position < 10
+	),
 	unique (id, room_id)
 ) strict;
 
