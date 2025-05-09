@@ -32,9 +32,7 @@ pub fn commit(tx: Transaction) -> Result<()> {
 pub fn init() {
 	std::process::Command::new("./db/init.sh")
 		.arg("test")
-		.spawn()
-		.unwrap()
-		.wait()
+		.output()
 		.unwrap();
 }
 

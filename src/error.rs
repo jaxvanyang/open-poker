@@ -11,6 +11,8 @@ pub enum ErrorType {
 	UnauthorizedError,
 	ConflictError,
 	NotFoundError,
+	BadRequestError,
+	ForbiddenError,
 }
 
 impl Display for ErrorType {
@@ -21,10 +23,13 @@ impl Display for ErrorType {
 			ErrorType::UnauthorizedError => write!(f, "unauthorized"),
 			ErrorType::ConflictError => write!(f, "conflict"),
 			ErrorType::NotFoundError => write!(f, "not found"),
+			ErrorType::BadRequestError => write!(f, "bad request"),
+			ErrorType::ForbiddenError => write!(f, "forbidden"),
 		}
 	}
 }
 
+/// Convience type for actix_web::Error
 #[derive(Debug)]
 pub struct Error {
 	pub r#type: ErrorType,
@@ -50,6 +55,8 @@ impl actix_web::ResponseError for Error {
 			ErrorType::UnauthorizedError => StatusCode::UNAUTHORIZED,
 			ErrorType::ConflictError => StatusCode::CONFLICT,
 			ErrorType::NotFoundError => StatusCode::NOT_FOUND,
+			ErrorType::BadRequestError => StatusCode::BAD_REQUEST,
+			ErrorType::ForbiddenError => StatusCode::FORBIDDEN,
 		}
 	}
 
@@ -61,7 +68,9 @@ impl actix_web::ResponseError for Error {
 				ErrorType::InternalServerError
 				| ErrorType::UnauthorizedError
 				| ErrorType::ConflictError
-				| ErrorType::NotFoundError => &self.msg,
+				| ErrorType::NotFoundError
+				| ErrorType::BadRequestError
+				| ErrorType::ForbiddenError => &self.msg,
 				ErrorType::DatabaseError => "something went wrong, please retry",
 			}
 		};
@@ -104,6 +113,20 @@ pub fn conflict_error(msg: impl Display) -> Error {
 pub fn not_found_error(msg: impl Display) -> Error {
 	Error {
 		r#type: ErrorType::NotFoundError,
+		msg: msg.to_string(),
+	}
+}
+
+pub fn bad_request_error(msg: impl Display) -> Error {
+	Error {
+		r#type: ErrorType::BadRequestError,
+		msg: msg.to_string(),
+	}
+}
+
+pub fn forbidden_error(msg: impl Display) -> Error {
+	Error {
+		r#type: ErrorType::ForbiddenError,
 		msg: msg.to_string(),
 	}
 }

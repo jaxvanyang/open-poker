@@ -51,7 +51,7 @@ create table game (
 ) strict;
 
 create table hand (
-	game_id integer primary key references game (id),
+	game_id integer references game (id),
 	guest_id integer references guest (id),
 	c1 text not null check (length (c1) = 2),
 	c2 text not null check (length (c2) = 2),

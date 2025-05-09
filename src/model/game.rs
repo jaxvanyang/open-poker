@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, PartialOrd, Ord)]
 pub enum Round {
 	PreFlop,
 	Flop,
@@ -45,5 +45,26 @@ impl Game {
 
 	pub fn is_finished(&self) -> bool {
 		self.round == Round::Finish
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_round_cmp() {
+		let rounds = [
+			Round::PreFlop,
+			Round::Flop,
+			Round::Turn,
+			Round::River,
+			Round::Finish,
+		];
+		for (i, a) in rounds.iter().enumerate() {
+			for b in &rounds[(i + 1)..] {
+				assert!(a < b);
+			}
+		}
 	}
 }

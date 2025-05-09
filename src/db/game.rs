@@ -1,4 +1,4 @@
-use crate::{Game, Room, Round, error::Result};
+use crate::{Card, Game, Room, Round, error::Result};
 use rusqlite::{OptionalExtension, Transaction};
 
 use super::{bet, max_id};
@@ -14,17 +14,42 @@ pub fn new_game(tx: &Transaction, room: &mut Room) -> Result<Game> {
 		(id, room.id, room.sb),
 	)?;
 
+	let mut deck = Card::new_deck();
+
 	for seat in &room.seats {
 		match seat {
 			Some(seat) => {
+				let (c1, c2) = (deck.pop().unwrap(), deck.pop().unwrap());
 				tx.execute(
 					"update seat set (bet, fold) = (0, false) where room_id = ?1 and guest_id = ?2",
 					(room.id, seat.guest.id),
+				)?;
+				tx.execute(
+					"insert into hand (game_id, guest_id, c1, c2) values (?1, ?2, ?3, ?4)",
+					(id, seat.guest.id, c1, c2),
 				)?;
 			}
 			None => continue,
 		}
 	}
+
+	tx.execute(
+		"insert into flop (game_id, c1, c2, c3) values (?1, ?2, ?3, ?4)",
+		(
+			id,
+			deck.pop().unwrap(),
+			deck.pop().unwrap(),
+			deck.pop().unwrap(),
+		),
+	)?;
+	tx.execute(
+		"insert into turn (game_id, card) values (?1, ?2)",
+		(id, deck.pop().unwrap()),
+	)?;
+	tx.execute(
+		"insert into river (game_id, card) values (?1, ?2)",
+		(id, deck.pop().unwrap()),
+	)?;
 
 	let mut game = Game::new(id, room.id, room.sb);
 	bet(tx, room, &mut game, 1)?;
@@ -52,6 +77,46 @@ pub fn game_by_id(tx: &Transaction, id: usize) -> Result<Option<Game>> {
 					position: row.get(3)?,
 				})
 			},
+		)
+		.optional()?)
+}
+
+pub fn get_hand(tx: &Transaction, game_id: usize, guest_id: usize) -> Result<Option<Vec<Card>>> {
+	Ok(tx
+		.query_row(
+			"select c1, c2 from hand where game_id = ?1 and guest_id = ?2",
+			(game_id, guest_id),
+			|row| Ok(vec![row.get(0)?, row.get(1)?]),
+		)
+		.optional()?)
+}
+
+pub fn get_flop(tx: &Transaction, game_id: usize) -> Result<Option<Vec<Card>>> {
+	Ok(tx
+		.query_row(
+			"select c1, c2, c3 from flop where game_id = ?1",
+			(game_id,),
+			|row| Ok(vec![row.get(0)?, row.get(1)?, row.get(2)?]),
+		)
+		.optional()?)
+}
+
+pub fn get_turn(tx: &Transaction, game_id: usize) -> Result<Option<Card>> {
+	Ok(tx
+		.query_row(
+			"select card from turn where game_id = ?1",
+			(game_id,),
+			|row| row.get(0),
+		)
+		.optional()?)
+}
+
+pub fn get_river(tx: &Transaction, game_id: usize) -> Result<Option<Card>> {
+	Ok(tx
+		.query_row(
+			"select card from river where game_id = ?1",
+			(game_id,),
+			|row| row.get(0),
 		)
 		.optional()?)
 }

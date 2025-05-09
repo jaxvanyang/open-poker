@@ -1,6 +1,10 @@
-use rand::seq::SliceRandom;
+use std::fmt::Display;
 
-#[derive(Debug, Clone, Copy)]
+use rand::seq::SliceRandom;
+use rusqlite::{ToSql, types::FromSql};
+use serde::Serialize;
+
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum Suit {
 	Spade,
 	Heart,
@@ -48,7 +52,19 @@ impl Suit {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Display for Suit {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let suit = match self {
+			Suit::Spade => 'S',
+			Suit::Heart => 'H',
+			Suit::Diamond => 'D',
+			Suit::Club => 'C',
+		};
+		write!(f, "{suit}")
+	}
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum Numeral {
 	A = 1,
 	Two = 2,
@@ -62,11 +78,43 @@ pub enum Numeral {
 	Ten = 10,
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Display for Numeral {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let numeral = match self {
+			Numeral::A => 'A',
+			Numeral::Two => '2',
+			Numeral::Three => '3',
+			Numeral::Four => '4',
+			Numeral::Five => '5',
+			Numeral::Six => '6',
+			Numeral::Seven => '7',
+			Numeral::Eight => '8',
+			Numeral::Nine => '9',
+			Numeral::Ten => 'T',
+		};
+		write!(f, "{numeral}")
+	}
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum Face {
 	J = 11,
 	Q = 12,
 	K = 13,
+}
+
+impl Display for Face {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Face::J => 'J',
+				Face::Q => 'Q',
+				Face::K => 'K',
+			}
+		)
+	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -75,7 +123,7 @@ pub enum Joker {
 	Black,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum Rank {
 	Numeral(Numeral),
 	Face(Face),
@@ -139,8 +187,21 @@ impl Rank {
 	}
 }
 
+impl Display for Rank {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Rank::Numeral(numeral) => numeral.to_string(),
+				Rank::Face(face) => face.to_string(),
+			}
+		)
+	}
+}
+
 /// French-suited card
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Card {
 	pub suit: Suit,
 	pub rank: Rank,
@@ -183,5 +244,23 @@ impl Card {
 			suit: Suit::parse(card.chars().nth(0).unwrap()),
 			rank: Rank::parse(card.chars().nth(1).unwrap()),
 		}
+	}
+}
+
+impl Display for Card {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}{}", self.suit, self.rank)
+	}
+}
+
+impl ToSql for Card {
+	fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+		Ok(self.to_string().into())
+	}
+}
+
+impl FromSql for Card {
+	fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+		Ok(Self::parse(value.as_str()?))
 	}
 }

@@ -1,15 +1,19 @@
-use actix_web::{HttpResponse, post, web};
+use actix_web::{HttpResponse, get, post, web};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use serde::Deserialize;
 use serde_json::json;
 use tracing::info;
 
 use crate::{
+	Round,
 	db::{
-		bet as execute_bet, game_by_id, guest_by_token, new_transaction, open_connection,
-		room_by_id,
+		bet as execute_bet, game_by_id, get_flop, get_hand, get_river, get_turn, guest_by_id,
+		guest_by_token, new_transaction, open_connection, room_by_id,
 	},
-	error::{Result, conflict_error, not_found_error, unauthorized_error},
+	error::{
+		Result, bad_request_error, conflict_error, forbidden_error, not_found_error,
+		unauthorized_error,
+	},
 };
 
 #[derive(Deserialize)]
@@ -50,6 +54,96 @@ pub async fn bet(
 	Ok(HttpResponse::Created().json(json!({"room": room, "game": game})))
 }
 
+#[get("/{game_id}/hands/{guest_id}")]
+pub async fn hand(auth: BearerAuth, path: web::Path<(usize, usize)>) -> Result<HttpResponse> {
+	let (game_id, guest_id) = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = conn.transaction()?;
+
+	// let mut game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+	let guest = guest_by_token(&tx, auth.token())?.ok_or(unauthorized_error("invalid token"))?;
+	let request_guest =
+		guest_by_id(&tx, guest_id)?.ok_or(not_found_error("request guest not found"))?;
+
+	if guest.id != request_guest.id {
+		return Err(bad_request_error(
+			"check other's hand is not supported for now",
+		));
+	}
+
+	let hand = get_hand(&tx, game_id, request_guest.id)?.unwrap();
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Ok().json(json!({"hand": hand})))
+}
+
+#[get("/{game_id}/flop")]
+pub async fn flop(path: web::Path<usize>) -> Result<HttpResponse> {
+	let game_id = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = conn.transaction()?;
+
+	let game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+
+	if game.round < Round::Flop {
+		return Err(forbidden_error("game is still before flop, please wait"));
+	}
+
+	let flop = get_flop(&tx, game_id)?.unwrap();
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Ok().json(json!({"flop": flop})))
+}
+
+#[get("/{game_id}/turn")]
+pub async fn turn(path: web::Path<usize>) -> Result<HttpResponse> {
+	let game_id = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = conn.transaction()?;
+
+	let game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+
+	if game.round < Round::Turn {
+		return Err(forbidden_error("game is still before turn, please wait"));
+	}
+
+	let turn = get_turn(&tx, game_id)?.unwrap();
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Ok().json(json!({"turn": turn})))
+}
+
+#[get("/{game_id}/river")]
+pub async fn river(path: web::Path<usize>) -> Result<HttpResponse> {
+	let game_id = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = conn.transaction()?;
+
+	let game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+
+	if game.round < Round::River {
+		return Err(forbidden_error("game is still before river, please wait"));
+	}
+
+	let river = get_river(&tx, game_id)?.unwrap();
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Ok().json(json!({"river": river})))
+}
+
 pub fn game_api() -> actix_web::Scope {
-	web::scope("/games").service(bet)
+	web::scope("/games")
+		.service(bet)
+		.service(hand)
+		.service(flop)
+		.service(turn)
+		.service(river)
 }
