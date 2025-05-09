@@ -1,3 +1,4 @@
+*.bak
 *.db3
 /.zed
 /target

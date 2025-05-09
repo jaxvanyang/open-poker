@@ -35,6 +35,17 @@ impl Suit {
 	pub fn iter() -> SuitIter {
 		SuitIter { i: 1 }
 	}
+
+	/// Parse database representation
+	pub fn parse(suit: char) -> Self {
+		match suit {
+			'S' => Self::Spade,
+			'H' => Self::Heart,
+			'C' => Self::Club,
+			'D' => Self::Diamond,
+			_ => panic!("invalid suit"),
+		}
+	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -106,6 +117,26 @@ impl Rank {
 	pub fn iter() -> RankIter {
 		RankIter { i: 1 }
 	}
+
+	/// Parse database representation
+	pub fn parse(rank: char) -> Self {
+		match rank {
+			'A' => Self::Numeral(Numeral::A),
+			'2' => Self::Numeral(Numeral::Two),
+			'3' => Self::Numeral(Numeral::Three),
+			'4' => Self::Numeral(Numeral::Four),
+			'5' => Self::Numeral(Numeral::Five),
+			'6' => Self::Numeral(Numeral::Six),
+			'7' => Self::Numeral(Numeral::Seven),
+			'8' => Self::Numeral(Numeral::Eight),
+			'9' => Self::Numeral(Numeral::Nine),
+			'T' => Self::Numeral(Numeral::Ten),
+			'J' => Self::Face(Face::J),
+			'Q' => Self::Face(Face::Q),
+			'K' => Self::Face(Face::K),
+			_ => panic!("invalid rank"),
+		}
+	}
 }
 
 /// French-suited card
@@ -143,5 +174,14 @@ impl Card {
 		deck.shuffle(&mut rand::rng());
 
 		deck
+	}
+
+	/// Parse database representation
+	pub fn parse(card: &str) -> Self {
+		assert!(card.len() == 2);
+		Self {
+			suit: Suit::parse(card.chars().nth(0).unwrap()),
+			rank: Rank::parse(card.chars().nth(1).unwrap()),
+		}
 	}
 }

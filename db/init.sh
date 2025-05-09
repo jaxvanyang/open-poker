@@ -11,8 +11,11 @@ if [ "$1" = test ]; then
 	db_file="test.db3"
 fi
 
-sqlite3 -echo "$db_dir/$db_file" < "$db_dir/db.sql"
+db_path="$db_dir/$db_file"
+rm -f "$db_path"
+
+sqlite3 -echo "$db_path" < "$db_dir/db.sql"
 
 if [ "$1" = debug ]; then
-	sqlite3 -echo "$db_dir/$db_file" < "$db_dir/debug.sql"
+	sqlite3 -echo "$db_path" < "$db_dir/debug.sql"
 fi

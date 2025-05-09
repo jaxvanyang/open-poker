@@ -1,10 +1,13 @@
-use actix_web::{HttpResponse, delete, patch, post, put, web};
+use actix_web::{HttpResponse, delete, get, patch, post, put, web};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use serde_json::json;
 use tracing::info;
 
 use crate::{
-	db::{commit, execute, guest_by_token, new_room, new_transaction, open_connection, room_by_id},
+	db::{
+		commit, execute, get_games, guest_by_token, new_game, new_room, new_transaction,
+		open_connection, room_by_id,
+	},
 	error::{conflict_error, internal_server_error, not_found_error, unauthorized_error},
 };
 
@@ -75,15 +78,23 @@ pub async fn ready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Resul
 		room.ready(guest.id).unwrap();
 	}
 
-	execute(
+	if execute(
 		&tx,
-		"insert into ready (room_id, guest_id) values (?1, ?2)",
+		"update seat set ready = true where room_id = ?1 and guest_id = ?2",
 		(room_id, guest.id),
-	)?;
+	)? != 1
+	{
+		return Err(internal_server_error("failed to set ready, please retry").into());
+	}
+
+	let mut game = None;
+	if room.should_start() {
+		game = Some(new_game(&tx, &mut room)?);
+	}
 
 	commit(tx)?;
 
-	Ok(HttpResponse::Ok().json(json!({"room": room})))
+	Ok(HttpResponse::Ok().json(json!({"room": room, "game": game})))
 }
 
 /// Set the guest to be unready
@@ -111,7 +122,7 @@ pub async fn unready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Res
 
 	if execute(
 		&tx,
-		"delete from ready where room_id = ?1 and guest_id = ?2",
+		"update seat set ready = false where room_id = ?1 and guest_id = ?2",
 		(room_id, guest.id),
 	)? != 1
 	{
@@ -123,10 +134,28 @@ pub async fn unready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Res
 	Ok(HttpResponse::Ok().json(json!({"room": room})))
 }
 
+/// Current game
+#[get("{room_id}/game")]
+pub async fn current_game(path: web::Path<usize>) -> actix_web::Result<HttpResponse> {
+	let room_id = path.into_inner();
+	info!("get: current game of room {room_id}");
+
+	let mut conn = open_connection()?;
+	let tx = new_transaction(&mut conn)?;
+
+	let games = get_games(&tx, room_id, false, 1, 0)?;
+	let game = games
+		.get(0)
+		.ok_or(not_found_error("no game has been played in this room"))?;
+
+	Ok(HttpResponse::Ok().json(json!({"game": game})))
+}
+
 pub fn room_api() -> actix_web::Scope {
 	web::scope("/rooms")
 		.service(new)
 		.service(join)
 		.service(ready)
 		.service(unready)
+		.service(current_game)
 }

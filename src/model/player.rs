@@ -2,6 +2,7 @@ use super::Card;
 
 #[derive(Debug, Clone)]
 pub struct Player {
+	pub id: usize,
 	pub seat: usize,
 	pub name: String,
 	pub stack: usize,

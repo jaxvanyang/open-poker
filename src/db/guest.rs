@@ -103,6 +103,10 @@ pub fn guest_by_token(tx: &Transaction, token: &str) -> Result<Option<Guest>> {
 		.optional()?)
 }
 
+// pub fn new_player(tx: &Transaction, game_id: usize) -> Result<Player> {
+
+// }
+
 #[cfg(test)]
 mod tests {
 	use crate::db;
