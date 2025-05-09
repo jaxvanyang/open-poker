@@ -42,4 +42,8 @@ impl Game {
 			position: sb,
 		}
 	}
+
+	pub fn is_finished(&self) -> bool {
+		self.round == Round::Finish
+	}
 }

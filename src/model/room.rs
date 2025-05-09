@@ -26,6 +26,22 @@ impl Room {
 		table
 	}
 
+	/// Get the player (not folded or allined) on or after the position
+	pub fn get_player(&self, position: usize) -> &Guest {
+		let mut p = position;
+		for _ in 0..Self::MAX_SEATS {
+			p = (p + 1) % Self::MAX_SEATS;
+			if let Some(seat) = &self.seats[p] {
+				if seat.fold || seat.allin() {
+					continue;
+				}
+				return &seat.guest;
+			}
+		}
+
+		unreachable!()
+	}
+
 	/// Pass sb to the next guest
 	pub fn pass_sb(&mut self) {
 		let mut sb = 0;
