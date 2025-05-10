@@ -89,6 +89,6 @@ create table bet (
 create table result (
 	game_id integer references game (id),
 	guest_id integer references guest (id),
-	result integer not null,
+	diff integer not null,
 	unique (game_id, guest_id)
 ) strict;

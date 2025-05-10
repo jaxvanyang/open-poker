@@ -5,10 +5,13 @@ use tracing::info;
 
 use crate::{
 	db::{
-		commit, execute, get_games, guest_by_token, new_game, new_room, new_transaction,
-		open_connection, room_by_id,
+		commit, execute, get_games, get_running_game, guest_by_token, new_game, new_room,
+		new_transaction, open_connection, room_by_id,
 	},
-	error::{conflict_error, internal_server_error, not_found_error, unauthorized_error},
+	error::{
+		Result, conflict_error, forbidden_error, internal_server_error, not_found_error,
+		unauthorized_error,
+	},
 };
 
 /// Create a new room
@@ -30,19 +33,23 @@ pub async fn new(auth: BearerAuth) -> actix_web::Result<HttpResponse> {
 
 /// Join a room
 #[patch("/{room_id}")]
-pub async fn join(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Result<HttpResponse> {
+pub async fn join(auth: BearerAuth, path: web::Path<usize>) -> Result<HttpResponse> {
 	let room_id = path.into_inner();
 	info!("patch: join room {room_id}");
 
 	let mut conn = open_connection()?;
 	let tx = new_transaction(&mut conn)?;
 
-	let guest = guest_by_token(&tx, auth.token())?;
-	let guest = guest.ok_or(unauthorized_error("invalid token"))?;
+	let guest = guest_by_token(&tx, auth.token())?.ok_or(unauthorized_error("invalid token"))?;
 	let mut room = room_by_id(&tx, room_id)?.ok_or(not_found_error("room not found"))?;
 	let position = room
 		.insert(guest.clone())
-		.ok_or(conflict_error("room full or already in"))?;
+		.ok_or(forbidden_error("room full or already in"))?;
+
+	let game = get_running_game(&tx, room_id)?;
+	if game.is_some() {
+		return Err(forbidden_error("there is a game running, please wait"));
+	}
 
 	execute(
 		&tx,

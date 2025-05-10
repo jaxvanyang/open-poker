@@ -56,6 +56,14 @@ impl Room {
 		self.seats.iter().filter(|i| i.is_some()).count()
 	}
 
+	/// Number of unfold players
+	pub fn player_count(&self) -> usize {
+		self.seats
+			.iter()
+			.filter(|s| s.as_ref().is_some_and(|s| !s.fold))
+			.count()
+	}
+
 	/// Are all players ready
 	pub fn all_ready(&self) -> bool {
 		for seat in &self.seats {
@@ -180,6 +188,9 @@ impl Room {
 		let mut max_bet = 0;
 		for i in 0..Self::MAX_SEATS {
 			if let Some(seat) = &self.seats[i] {
+				if seat.fold {
+					continue;
+				}
 				max_bet = max_bet.max(seat.bet);
 			}
 		}

@@ -1,4 +1,4 @@
-use crate::{Card, Game, Room, error::Result};
+use crate::{Card, Game, GameResult, Room, error::Result};
 use rusqlite::{OptionalExtension, Transaction};
 
 use super::{bet, max_id};
@@ -20,14 +20,16 @@ pub fn new_game(tx: &Transaction, room: &mut Room) -> Result<Game> {
 
 	let mut deck = Card::new_deck();
 
-	for seat in &room.seats {
+	for seat in &mut room.seats {
 		match seat {
 			Some(seat) => {
-				let (c1, c2) = (deck.pop().unwrap(), deck.pop().unwrap());
+				seat.bet = 0;
+				seat.fold = false;
 				tx.execute(
 					"update seat set (bet, fold) = (0, false) where room_id = ?1 and guest_id = ?2",
 					(room.id, seat.guest.id),
 				)?;
+				let (c1, c2) = (deck.pop().unwrap(), deck.pop().unwrap());
 				tx.execute(
 					"insert into hand (game_id, guest_id, c1, c2) values (?1, ?2, ?3, ?4)",
 					(id, seat.guest.id, c1, c2),
@@ -124,4 +126,29 @@ pub fn get_river(tx: &Transaction, game_id: usize) -> Result<Option<Card>> {
 			|row| row.get(0),
 		)
 		.optional()?)
+}
+
+pub fn update_round(tx: &Transaction, room: &Room, game: &mut Game) -> Result<bool> {
+	let result = game.update(room);
+
+	if result {
+		tx.execute(
+			"update game set round = ?1 where id = ?2",
+			(game.round, game.id),
+		)?;
+	}
+
+	Ok(result)
+}
+
+pub fn get_results(tx: &Transaction, game_id: usize) -> Result<Vec<GameResult>> {
+	let mut stmt = tx.prepare("select guest_id, diff from result where game_id = ?1")?;
+	let mut results = Vec::new();
+	for result in stmt.query_map((game_id,), |row| {
+		Ok(GameResult::new(game_id, row.get(0)?, row.get(1)?))
+	})? {
+		results.push(result?);
+	}
+
+	Ok(results)
 }

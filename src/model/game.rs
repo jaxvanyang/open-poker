@@ -1,4 +1,6 @@
-use rusqlite::types::FromSql;
+use std::fmt::Display;
+
+use rusqlite::{ToSql, types::FromSql};
 use serde::Serialize;
 
 use super::Room;
@@ -10,7 +12,7 @@ pub enum Round {
 	Flop,
 	Turn,
 	River,
-	Finish,
+	Over,
 }
 
 impl Round {
@@ -21,15 +23,52 @@ impl Round {
 			"flop" => Self::Flop,
 			"turn" => Self::Turn,
 			"river" => Self::River,
-			"finish" => Self::Finish,
+			"finish" => Self::Over,
 			_ => panic!("invalid round"),
 		}
+	}
+
+	/// Return the next round
+	///
+	/// # Return
+	///
+	/// Finish's next round is still Finish for convenience
+	pub fn next_round(&self) -> Self {
+		match self {
+			Round::PreFlop => Round::Flop,
+			Round::Flop => Round::Turn,
+			Round::Turn => Round::River,
+			Round::River => Round::Over,
+			Round::Over => Round::Over,
+		}
+	}
+}
+
+impl Display for Round {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				Self::PreFlop => "preflop",
+				Self::Flop => "flop",
+				Self::Turn => "turn",
+				Self::River => "river",
+				Self::Over => "finish",
+			}
+		)
 	}
 }
 
 impl FromSql for Round {
 	fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
 		Ok(Self::parse(value.as_str().unwrap()))
+	}
+}
+
+impl ToSql for Round {
+	fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+		Ok(self.to_string().into())
 	}
 }
 
@@ -57,8 +96,8 @@ impl Game {
 		}
 	}
 
-	pub fn is_finished(&self) -> bool {
-		self.round == Round::Finish
+	pub fn is_over(&self) -> bool {
+		self.round == Round::Over
 	}
 
 	/// Correct player position
@@ -83,6 +122,44 @@ impl Game {
 		self.position += 1;
 		self.correct(room)
 	}
+
+	/// Update round if condition meet
+	///
+	/// # Return
+	///
+	/// Return ture if round changed
+	pub fn update(&mut self, room: &Room) -> bool {
+		// all fold except one
+		if room.player_count() == 1 {
+			self.round = Round::Over;
+			return true;
+		}
+
+		// deal logic
+		if self.position == self.raise_position {
+			self.round = self.round.next_round();
+			return true;
+		}
+
+		false
+	}
+}
+
+#[derive(Debug, Serialize)]
+pub struct GameResult {
+	pub game_id: usize,
+	pub guest_id: usize,
+	pub diff: isize,
+}
+
+impl GameResult {
+	pub fn new(game_id: usize, guest_id: usize, diff: isize) -> Self {
+		Self {
+			game_id,
+			guest_id,
+			diff,
+		}
+	}
 }
 
 #[cfg(test)]
@@ -96,7 +173,7 @@ mod tests {
 			Round::Flop,
 			Round::Turn,
 			Round::River,
-			Round::Finish,
+			Round::Over,
 		];
 		for (i, a) in rounds.iter().enumerate() {
 			for b in &rounds[(i + 1)..] {

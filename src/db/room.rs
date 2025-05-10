@@ -98,6 +98,21 @@ pub fn get_games(
 	Ok(games)
 }
 
+/// Get current running game of the room
+pub fn get_running_game(tx: &Transaction, id: usize) -> Result<Option<Game>> {
+	let game = get_games(tx, id, false, 1, 0)?.pop();
+	Ok(match game {
+		Some(game) => {
+			if game.is_over() {
+				None
+			} else {
+				Some(game)
+			}
+		}
+		None => None,
+	})
+}
+
 /// Bet as the current player of the game
 pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> Result<()> {
 	let max_bet = room.max_bet();
@@ -106,12 +121,16 @@ pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> 
 	assert!(chips <= seat.stack);
 	seat.stack -= chips;
 	seat.bet += chips;
+	game.pot += chips;
 	if seat.bet > max_bet {
 		game.raise_position = game.position;
-	} else if !seat.allin() {
+		tx.execute(
+			"update game set raise_position = ?1 where id = ?2",
+			(game.raise_position, game.id),
+		)?;
+	} else if seat.bet != max_bet && !seat.allin() {
 		return Err(conflict_error("should bet more"));
 	}
-	game.pot += chips;
 	tx.execute(
 		"update seat set (stack, bet) = (?1, ?2) where room_id = ?3 and guest_id = ?4",
 		(seat.stack, seat.bet, room.id, seat.guest.id),
@@ -145,6 +164,57 @@ pub fn fold(tx: &Transaction, room: &mut Room, game: &mut Game) -> Result<()> {
 		"update game set position = ?1 where id = ?2",
 		(game.position, game.id),
 	)?;
+
+	Ok(())
+}
+
+/// Compute game result
+///
+/// # Note
+///
+/// Only use this function when the game is over
+pub fn calc_result(tx: &Transaction, room: &mut Room, game: &Game) -> Result<()> {
+	let player_ids: Vec<_> = room
+		.seats
+		.iter()
+		.filter(|s| s.as_ref().is_some_and(|s| !s.fold))
+		.filter_map(|s| s.as_ref().map(|s| s.guest.id))
+		.collect();
+
+	let winner_id = player_ids[0];
+	if player_ids.len() > 1 {
+		todo!("showdown logic");
+	}
+
+	// TODO: side pot logic
+	for seat in room.seats.iter_mut().filter_map(|s| s.as_mut()) {
+		let diff = if seat.guest.id == winner_id {
+			seat.stack += game.pot;
+			tx.execute(
+				"update seat set stack = ?1 where room_id = ?2 and guest_id = ?3",
+				(seat.stack, room.id, winner_id),
+			)?;
+
+			(game.pot - seat.bet) as isize
+		} else {
+			-(seat.bet as isize)
+		};
+		seat.guest.bankroll += diff;
+		seat.ready = false;
+
+		tx.execute(
+			"insert into result (game_id, guest_id, diff) values (?1, ?2, ?3)",
+			(game.id, seat.guest.id, diff),
+		)?;
+		tx.execute(
+			"update guest set bankroll = ?1 where id = ?2",
+			(seat.guest.bankroll, seat.guest.id),
+		)?;
+		tx.execute(
+			"update seat set ready = false where room_id = ?1 and guest_id = ?2",
+			(room.id, seat.guest.id),
+		)?;
+	}
 
 	Ok(())
 }
