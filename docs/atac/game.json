@@ -1,0 +1,719 @@
+{
+  "name": "game",
+  "requests": [
+    {
+      "name": "game info",
+      "url": "{{BASE_URL}}/games/{game_id}",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "game records",
+      "url": "{{BASE_URL}}/games/{game_id}/records",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "offset",
+            "0"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BEARER_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "play action",
+      "url": "{{BASE_URL}}/games/{game_id}/records",
+      "method": "PATCH",
+      "params": [],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BEARER_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "game result",
+      "url": "{{BASE_URL}}/games/{game_id}/results",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "bet",
+      "url": "{{BASE_URL}}/games/{game_id}/bets",
+      "method": "POST",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "3"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "content-type",
+            "application/x-www-form-urlencoded"
+          ]
+        }
+      ],
+      "body": {
+        "form": [
+          {
+            "enabled": true,
+            "data": [
+              "chips",
+              "10"
+            ]
+          }
+        ]
+      },
+      "auth": {
+        "bearer_token": {
+          "token": "{{ALICE_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "hand",
+      "url": "{{BASE_URL}}/games/{game_id}/hands/{guest_id}",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{guest_id}",
+            "2"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BOB_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "fold",
+      "url": "{{BASE_URL}}/games/{game_id}/fold",
+      "method": "POST",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BOB_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "flop",
+      "url": "{{BASE_URL}}/games/{game_id}/flop",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "turn",
+      "url": "{{BASE_URL}}/games/{game_id}/turn",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "river",
+      "url": "{{BASE_URL}}/games/{game_id}/river",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{game_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    }
+  ]
+}

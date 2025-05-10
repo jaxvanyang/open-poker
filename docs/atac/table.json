@@ -1,0 +1,482 @@
+{
+  "name": "room",
+  "requests": [
+    {
+      "name": "create a new room",
+      "url": "{{BASE_URL}}/rooms",
+      "method": "POST",
+      "params": [],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{ALICE_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "join a room",
+      "url": "{{BASE_URL}}/rooms/{room_id}",
+      "method": "PATCH",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{room_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BOB_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "set ready status",
+      "url": "{{BASE_URL}}/rooms/{room_id}/ready",
+      "method": "PUT",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{room_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{BOB_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "set unready status",
+      "url": "{{BASE_URL}}/rooms/{room_id}/ready",
+      "method": "DELETE",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{room_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": {
+        "bearer_token": {
+          "token": "{{ALICE_TOKEN}}"
+        }
+      },
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "get room info",
+      "url": "{{BASE_URL}}/rooms/{room_id}",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{room_id}",
+            "16"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "history games of the room",
+      "url": "{{BASE_URL}}/rooms/{room_id}/games",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "limit",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    },
+    {
+      "name": "current game of the room",
+      "url": "{{BASE_URL}}/rooms/{room_id}/game",
+      "method": "GET",
+      "params": [
+        {
+          "enabled": true,
+          "data": [
+            "{BASE_URL}",
+            "value"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "{room_id}",
+            "1"
+          ]
+        }
+      ],
+      "headers": [
+        {
+          "enabled": true,
+          "data": [
+            "cache-control",
+            "no-cache"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "user-agent",
+            "ATAC/v0.19.0"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept",
+            "*/*"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "accept-encoding",
+            "gzip, deflate, br"
+          ]
+        },
+        {
+          "enabled": true,
+          "data": [
+            "connection",
+            "keep-alive"
+          ]
+        }
+      ],
+      "body": "no_body",
+      "auth": "no_auth",
+      "scripts": {
+        "pre_request_script": null,
+        "post_request_script": null
+      },
+      "settings": {
+        "use_config_proxy": true,
+        "allow_redirects": true,
+        "store_received_cookies": true,
+        "pretty_print_response_content": true,
+        "accept_invalid_certs": false,
+        "accept_invalid_hostnames": false
+      }
+    }
+  ]
+}
