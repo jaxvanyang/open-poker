@@ -1,15 +1,44 @@
-use std::{io::Write, process::exit, time::Duration};
+use std::{fmt::Display, io::Write, process::exit, time::Duration};
 
 use actix_web::rt::time::sleep;
+use serde::Deserialize;
 
-use crate::User;
+use crate::{Game, Guest, Room, sprintln};
+
+fn print_help() {
+	println!(
+		"Command list:
+		help
+		login <name>
+		new
+		join <room_id>
+		ready
+		fold
+		check
+		call
+		raise <chips>
+		allin"
+	)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ErrorResponse {
+	pub error: String,
+}
+
+impl Display for ErrorResponse {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		self.error.fmt(f)
+	}
+}
 
 pub struct Client {
 	pub awc: awc::Client,
 	pub server_addr: String,
-	pub user: Option<User>,
-	pub table_id: Option<String>,
-	pub game_id: Option<String>,
+	pub guest: Option<Guest>,
+	pub token: Option<String>,
+	pub room: Option<Room>,
+	pub game: Option<Game>,
 }
 
 impl Default for Client {
@@ -17,9 +46,10 @@ impl Default for Client {
 		Self {
 			awc: awc::Client::default(),
 			server_addr: "http://localhost:12345".to_string(),
-			user: None,
-			table_id: None,
-			game_id: None,
+			guest: None,
+			token: None,
+			room: None,
+			game: None,
 		}
 	}
 }
@@ -44,8 +74,42 @@ impl Client {
 		Ok(command)
 	}
 
+	/// Wait and execute command
+	///
+	/// # Return
+	///
+	/// Err if command failed
+	pub async fn run_command(&mut self) -> anyhow::Result<()> {
+		let command = Client::read_command()?;
+		let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
+		match command[..] {
+			[] => (),
+			["help"] => print_help(),
+			["login", name] => {
+				self.login(name).await?;
+			}
+			["new"] => {
+				self.new_room().await?;
+			}
+			["join", id] => {
+				self.join(id).await?;
+			}
+			["ready"] => {
+				self.ready().await?;
+				self.play().await?;
+				sprintln!("game is over");
+			}
+			["exit"] => {
+				exit(0);
+			}
+			_ => sprintln!("unknown command!"),
+		}
+
+		Ok(())
+	}
+
 	/// Sleep for a tick
 	pub async fn tick() {
-		sleep(Duration::from_secs_f32(Self::TICK)).await;
+		sleep(Duration::from_secs_f32(Self::TICK)).await
 	}
 }

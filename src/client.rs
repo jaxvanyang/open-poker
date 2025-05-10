@@ -1,9 +1,7 @@
 pub mod core;
+pub mod error;
 pub mod game;
-pub mod table;
-pub mod user;
+pub mod guest;
+pub mod room;
 
 pub use core::*;
-pub use game::*;
-pub use table::*;
-pub use user::*;

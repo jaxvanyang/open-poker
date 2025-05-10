@@ -1,7 +1,7 @@
 use rand::{Rng, distr::Alphanumeric};
 use rusqlite::{OptionalExtension, Transaction};
 
-use crate::Guest;
+use crate::{Guest, error::forbidden_error};
 
 use super::{max_id, open_connection};
 use crate::error::Result;
@@ -24,6 +24,13 @@ pub fn max_guest_id(tx: &Transaction) -> Result<usize> {
 }
 
 pub fn new_guest(tx: &Transaction, name: &str) -> Result<Guest> {
+	if name.len() < 3 || name.len() > 32 {
+		return Err(forbidden_error("name length should between 3 and 32"));
+	}
+	if name == "client" || name == "server" || name == "system" {
+		return Err(forbidden_error("name reserved"));
+	}
+
 	let max_id = max_guest_id(tx)?;
 	let id = max_id + 1;
 	tx.execute("insert into guest(id, name) values(?1, ?2)", (id, name))?;

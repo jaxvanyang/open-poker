@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
-use actix_web::HttpResponse;
-use awc::http::StatusCode;
+use actix_web::{HttpResponse, http::StatusCode};
 use serde_json::json;
 
 #[derive(Debug)]
@@ -60,7 +59,7 @@ impl actix_web::ResponseError for Error {
 		}
 	}
 
-	fn error_response(&self) -> actix_web::HttpResponse<awc::body::BoxBody> {
+	fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
 		let msg = if cfg!(debug_assertions) {
 			&self.msg
 		} else {

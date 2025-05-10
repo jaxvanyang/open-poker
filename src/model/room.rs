@@ -1,8 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::{Game, Guest, Seat};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
 	pub id: usize,
 	pub seats: [Option<Seat>; Self::MAX_SEATS],

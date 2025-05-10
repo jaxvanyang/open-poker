@@ -6,7 +6,8 @@ default-run = "server"
 
 [dependencies]
 actix-web = "4.10.2"
-awc = "3.6.0"
+awc = { version = "3.6.0", optional = false }
+anyhow = { version = "1", optional = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.9.1"

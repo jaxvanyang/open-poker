@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
 use rusqlite::{ToSql, types::FromSql};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::Room;
 use crate::error::{Result, forbidden_error};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum Round {
 	PreFlop,
 	Flop,
@@ -72,7 +72,7 @@ impl ToSql for Round {
 	}
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Game {
 	pub id: usize,
 	pub room_id: usize,

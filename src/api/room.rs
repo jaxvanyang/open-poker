@@ -62,6 +62,23 @@ pub async fn join(auth: BearerAuth, path: web::Path<usize>) -> Result<HttpRespon
 	Ok(HttpResponse::Ok().json(json!({"room": room})))
 }
 
+/// Get the room and running game
+#[get("/{room_id}")]
+pub async fn get_room(path: web::Path<usize>) -> Result<HttpResponse> {
+	let room_id = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = new_transaction(&mut conn)?;
+
+	let room = room_by_id(&tx, room_id)?.ok_or(not_found_error("room not found"))?;
+
+	let game = get_running_game(&tx, room_id)?;
+
+	commit(tx)?;
+
+	Ok(HttpResponse::Ok().json(json!({"room": room, "game": game})))
+}
+
 /// Set the guest to be ready
 #[put("/{room_id}/ready")]
 pub async fn ready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Result<HttpResponse> {
@@ -165,4 +182,5 @@ pub fn room_api() -> actix_web::Scope {
 		.service(ready)
 		.service(unready)
 		.service(current_game)
+		.service(get_room)
 }
