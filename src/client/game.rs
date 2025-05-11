@@ -1,4 +1,4 @@
-use std::{process::exit, result};
+use std::process::exit;
 
 use serde::Deserialize;
 
@@ -102,6 +102,8 @@ impl Client {
 				[] => {
 					continue;
 				}
+				["help"] => print_help(),
+				["status"] => self.print_game_status(),
 				["fold"] => {
 					let result = self.fold().await;
 					if let Err(err) = result {
@@ -113,7 +115,7 @@ impl Client {
 				["raise", chips] => todo!(),
 				["allin"] => todo!(),
 				["exit"] => exit(0),
-				_ => sprintln!("unknown command!"),
+				_ => sprintln!("unknown command or wrong usage"),
 			}
 
 			if self.game.as_ref().is_some_and(|g| g.is_over()) {
@@ -164,4 +166,48 @@ impl Client {
 	// pub async fn allin(&mut self) -> Result<()> {
 	// 	todo!()
 	// }
+
+	fn print_game_status(&self) {
+		let guest = self.guest.as_ref().unwrap();
+		let room = self.room.as_ref().unwrap();
+		let game = self.game.as_ref().unwrap();
+
+		for (i, seat) in room.seats.iter().enumerate() {
+			if seat.is_none() {
+				continue;
+			}
+			let seat = seat.as_ref().unwrap();
+			let status = if seat.fold {
+				"fold".to_string()
+			} else if seat.stack == 0 {
+				format!("allin {}", seat.bet)
+			} else {
+				format!("bet {}", seat.bet)
+			};
+			let mark = if seat.guest.id == guest.id {
+				"<"
+			} else if game.position == i {
+				"..."
+			} else {
+				""
+			};
+			println!("{i}: {} {status} {mark}", seat.guest.name);
+		}
+
+		println!("round: {}, pot: {}", game.round, game.pot);
+	}
+}
+
+fn print_help() {
+	println!(
+		"Command list:
+		help
+		status
+		fold
+		check
+		call
+		raise
+		allin
+		exit"
+	)
 }

@@ -3,23 +3,7 @@ use std::{fmt::Display, io::Write, process::exit, time::Duration};
 use actix_web::rt::time::sleep;
 use serde::Deserialize;
 
-use crate::{Game, Guest, Room, sprintln};
-
-fn print_help() {
-	println!(
-		"Command list:
-		help
-		login <name>
-		new
-		join <room_id>
-		ready
-		fold
-		check
-		call
-		raise <chips>
-		allin"
-	)
-}
+use crate::{Game, Guest, Room, say, sprintln};
 
 #[derive(Debug, Deserialize)]
 pub struct ErrorResponse {
@@ -79,12 +63,14 @@ impl Client {
 	/// # Return
 	///
 	/// Err if command failed
+	// TODO: make a good name
 	pub async fn run_command(&mut self) -> anyhow::Result<()> {
 		let command = Client::read_command()?;
 		let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
 		match command[..] {
 			[] => (),
 			["help"] => print_help(),
+			["status"] => self.print_status(),
 			["login", name] => {
 				self.login(name).await?;
 			}
@@ -102,7 +88,7 @@ impl Client {
 			["exit"] => {
 				exit(0);
 			}
-			_ => sprintln!("unknown command!"),
+			_ => sprintln!("unknown command or wrong usage"),
 		}
 
 		Ok(())
@@ -112,4 +98,41 @@ impl Client {
 	pub async fn tick() {
 		sleep(Duration::from_secs_f32(Self::TICK)).await
 	}
+
+	fn print_status(&self) {
+		if self.guest.is_none() {
+			println!("not login");
+			return;
+		}
+		let guest = self.guest.as_ref().unwrap();
+		println!("logined as {}", guest.name);
+
+		if self.room.is_none() {
+			println!("not in a room");
+			return;
+		}
+		let room = self.room.as_ref().unwrap();
+		for (i, seat) in room.seats.iter().enumerate() {
+			if seat.is_none() {
+				continue;
+			}
+			let seat = seat.as_ref().unwrap();
+			let ready = if seat.ready { "ready" } else { "not ready" };
+			let mark = if seat.guest.id == guest.id { "<" } else { "" };
+			println!("{i}: {} {ready} {mark}", seat.guest.name);
+		}
+	}
+}
+
+fn print_help() {
+	println!(
+		"Command list:
+		help
+		status
+		login <name>
+		new
+		join <room_id>
+		ready
+		exit"
+	)
 }
