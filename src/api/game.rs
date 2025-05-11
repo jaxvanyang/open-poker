@@ -176,6 +176,31 @@ pub async fn river(path: web::Path<usize>) -> Result<HttpResponse> {
 	Ok(HttpResponse::Ok().json(json!({"river": river})))
 }
 
+#[get("/{game_id}/common")]
+pub async fn common(path: web::Path<usize>) -> Result<HttpResponse> {
+	let game_id = path.into_inner();
+
+	let mut conn = open_connection()?;
+	let tx = conn.transaction()?;
+
+	let game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+	let mut cards = Vec::new();
+
+	if game.round >= Round::Flop {
+		cards.extend(get_flop(&tx, game_id)?.unwrap());
+	}
+	if game.round >= Round::Turn {
+		cards.push(get_turn(&tx, game_id)?.unwrap());
+	}
+	if game.round >= Round::River {
+		cards.push(get_river(&tx, game_id)?.unwrap());
+	}
+
+	tx.commit()?;
+
+	Ok(HttpResponse::Ok().json(json!({"cards": cards})))
+}
+
 #[get("/{game_id}/results")]
 pub async fn results(path: web::Path<usize>) -> Result<HttpResponse> {
 	let game_id = path.into_inner();
@@ -204,5 +229,6 @@ pub fn game_api() -> actix_web::Scope {
 		.service(flop)
 		.service(turn)
 		.service(river)
+		.service(common)
 		.service(results)
 }
