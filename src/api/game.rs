@@ -98,7 +98,7 @@ pub async fn hand(auth: BearerAuth, path: web::Path<(usize, usize)>) -> Result<H
 	let mut conn = open_connection()?;
 	let tx = conn.transaction()?;
 
-	// let mut game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
+	game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
 	let guest = guest_by_token(&tx, auth.token())?.ok_or(unauthorized_error("invalid token"))?;
 	let request_guest =
 		guest_by_id(&tx, guest_id)?.ok_or(not_found_error("request guest not found"))?;
@@ -109,7 +109,8 @@ pub async fn hand(auth: BearerAuth, path: web::Path<(usize, usize)>) -> Result<H
 		));
 	}
 
-	let hand = get_hand(&tx, game_id, request_guest.id)?.unwrap();
+	let hand = get_hand(&tx, game_id, request_guest.id)?
+		.ok_or(not_found_error("guest not in the game"))?;
 
 	tx.commit()?;
 
