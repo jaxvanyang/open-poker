@@ -108,14 +108,16 @@ impl Client {
 		sprintln!("waiting...");
 		self.wait_game().await?;
 		sprintln!("game started");
-		println!("You have {}, {}", self.hand[0], self.hand[1]);
+		println!("You have {}", self.pretty_hand());
 
 		sprintln!("waiting...");
 		self.wait_turn().await?;
+		// game is over
 		if self.game.is_none() {
 			return Ok(());
 		}
 		sprintln!("it's your turn now");
+		self.print_game_status();
 
 		loop {
 			let command = Client::read_command()?;
@@ -189,6 +191,28 @@ impl Client {
 	// 	todo!()
 	// }
 
+	/// Convert cards to string for printing
+	pub fn pretty_cards(cards: &[Card]) -> String {
+		let mut s = String::new();
+		if cards.len() == 0 {
+			return s;
+		}
+		s.push_str(&cards[0].to_string());
+		for i in 1..s.len() {
+			s.push_str(&format!(", {}", cards[i]));
+		}
+
+		s
+	}
+
+	pub fn pretty_hand(&self) -> String {
+		Self::pretty_cards(&self.hand)
+	}
+
+	pub fn pretty_common(&self) -> String {
+		Self::pretty_cards(&self.common)
+	}
+
 	fn print_game_status(&self) {
 		let guest = self.guest.as_ref().unwrap();
 		let room = self.room.as_ref().unwrap();
@@ -207,16 +231,21 @@ impl Client {
 				format!("bet {}", seat.bet)
 			};
 			let mark = if seat.guest.id == guest.id {
-				"<"
+				format!("< {}", self.pretty_hand())
 			} else if game.position == i {
-				"..."
+				"...".to_string()
 			} else {
-				""
+				"".to_string()
 			};
 			println!("{i}: {} {status} {mark}", seat.guest.name);
 		}
 
-		println!("round: {}, pot: {}", game.round, game.pot);
+		println!(
+			"round: {}, pot: {}, common: {}",
+			game.round,
+			game.pot,
+			self.pretty_common()
+		);
 	}
 }
 
