@@ -355,13 +355,6 @@
         {
           "enabled": true,
           "data": [
-            "{BASE_URL}",
-            "value"
-          ]
-        },
-        {
-          "enabled": true,
-          "data": [
             "{game_id}",
             "1"
           ]

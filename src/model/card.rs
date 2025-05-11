@@ -2,9 +2,9 @@ use std::fmt::Display;
 
 use rand::seq::SliceRandom;
 use rusqlite::{ToSql, types::FromSql};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Suit {
 	Spade,
 	Heart,
@@ -64,7 +64,7 @@ impl Display for Suit {
 	}
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Numeral {
 	A = 1,
 	Two = 2,
@@ -96,7 +96,7 @@ impl Display for Numeral {
 	}
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Face {
 	J = 11,
 	Q = 12,
@@ -123,7 +123,7 @@ pub enum Joker {
 	Black,
 }
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Rank {
 	Numeral(Numeral),
 	Face(Face),
@@ -201,7 +201,7 @@ impl Display for Rank {
 }
 
 /// French-suited card
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Card {
 	pub suit: Suit,
 	pub rank: Rank,

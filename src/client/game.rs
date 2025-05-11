@@ -2,7 +2,7 @@ use std::process::exit;
 
 use serde::Deserialize;
 
-use crate::{Game, Room, client::ErrorResponse, sprintln};
+use crate::{Card, Game, Room, client::ErrorResponse, sprintln};
 
 use super::{Client, error::anyhow_error};
 
@@ -10,6 +10,11 @@ use super::{Client, error::anyhow_error};
 struct RoomResponse {
 	room: Room,
 	game: Option<Game>,
+}
+
+#[derive(Debug, Deserialize)]
+struct HandResponse {
+	hand: Vec<Card>,
 }
 
 impl Client {
@@ -59,22 +64,37 @@ impl Client {
 	pub async fn wait_game(&mut self) -> anyhow::Result<()> {
 		let room_id = self.room.as_ref().unwrap().id;
 		loop {
-			let mut response = self
+			let mut room_resp = self
 				.awc
 				.get(format!("{}/rooms/{}", self.server_addr, room_id))
 				.send()
 				.await
 				.map_err(anyhow_error)?;
 
-			if response.status().is_success() {
-				let resp: RoomResponse = response.json().await?;
+			if room_resp.status().is_success() {
+				let resp: RoomResponse = room_resp.json().await?;
 				self.room = Some(resp.room);
 				self.game = resp.game;
-				if self.game.is_some() {
-					break;
+				if let Some(game) = &self.game {
+					let guest = self.guest.as_ref().unwrap();
+					let mut hand_resp = self
+						.awc
+						.get(format!(
+							"{}/games/{}/hands/{}",
+							self.server_addr, game.id, guest.id
+						))
+						.bearer_auth(self.token.as_ref().unwrap())
+						.send()
+						.await
+						.map_err(anyhow_error)?;
+					if hand_resp.status().is_success() {
+						let resp: HandResponse = hand_resp.json().await?;
+						self.hand = resp.hand;
+						break;
+					}
 				}
 			} else {
-				let resp: ErrorResponse = response.json().await?;
+				let resp: ErrorResponse = room_resp.json().await?;
 				sprintln!("failed to retrive game info: {}", resp);
 			}
 
@@ -88,6 +108,8 @@ impl Client {
 		sprintln!("waiting...");
 		self.wait_game().await?;
 		sprintln!("game started");
+		println!("You have {}, {}", self.hand[0], self.hand[1]);
+
 		sprintln!("waiting...");
 		self.wait_turn().await?;
 		if self.game.is_none() {

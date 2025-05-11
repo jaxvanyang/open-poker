@@ -3,7 +3,7 @@ use std::{fmt::Display, io::Write, process::exit, time::Duration};
 use actix_web::rt::time::sleep;
 use serde::Deserialize;
 
-use crate::{Game, Guest, Room, say, sprintln};
+use crate::{Card, Game, Guest, Room, sprintln};
 
 #[derive(Debug, Deserialize)]
 pub struct ErrorResponse {
@@ -23,6 +23,8 @@ pub struct Client {
 	pub token: Option<String>,
 	pub room: Option<Room>,
 	pub game: Option<Game>,
+	pub hand: Vec<Card>,
+	pub common: Vec<Card>,
 }
 
 impl Default for Client {
@@ -34,6 +36,8 @@ impl Default for Client {
 			token: None,
 			room: None,
 			game: None,
+			hand: vec![],
+			common: vec![],
 		}
 	}
 }
@@ -58,13 +62,12 @@ impl Client {
 		Ok(command)
 	}
 
-	/// Wait and execute command
+	/// Wait input and execute command
 	///
 	/// # Return
 	///
 	/// Err if command failed
-	// TODO: make a good name
-	pub async fn run_command(&mut self) -> anyhow::Result<()> {
+	pub async fn run(&mut self) -> anyhow::Result<()> {
 		let command = Client::read_command()?;
 		let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
 		match command[..] {
