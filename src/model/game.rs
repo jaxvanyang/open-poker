@@ -145,7 +145,7 @@ impl Game {
 	}
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GameResult {
 	pub game_id: usize,
 	pub guest_id: usize,

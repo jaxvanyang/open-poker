@@ -2,7 +2,7 @@ use std::process::exit;
 
 use serde::Deserialize;
 
-use crate::{Card, Game, Room, client::ErrorResponse, sprintln};
+use crate::{Card, Game, GameResult, Room, client::ErrorResponse, sprintln};
 
 use super::{Client, error::anyhow_error};
 
@@ -15,6 +15,11 @@ pub struct RoomResponse {
 #[derive(Debug, Deserialize)]
 struct HandResponse {
 	hand: Vec<Card>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ResultsResponse {
+	results: Vec<GameResult>,
 }
 
 impl Client {
@@ -112,7 +117,7 @@ impl Client {
 		sprintln!("waiting...");
 		self.wait_game().await?;
 		sprintln!("game started");
-		println!("You have {}", self.pretty_hand());
+		println!("Your hand: {}", self.pretty_hand());
 
 		sprintln!("waiting...");
 		self.wait_turn().await?;
@@ -154,13 +159,63 @@ impl Client {
 		Ok(())
 	}
 
+	pub async fn print_game_result(&mut self) -> anyhow::Result<()> {
+		let game = self.game.as_ref().unwrap();
+		let results;
+		loop {
+			let mut resp = self
+				.awc
+				.get(format!("{}/games/{}/results", self.server_addr, game.id))
+				.send()
+				.await
+				.map_err(anyhow_error)?;
+
+			if resp.status().is_success() {
+				let resp: ResultsResponse = resp.json().await?;
+				results = resp.results;
+				break;
+			} else {
+				println!("failed to get game result: ");
+			}
+		}
+
+		println!(
+			"Game: {}, pot: {}, common: {}",
+			game.id,
+			game.pot,
+			self.pretty_common()
+		);
+		let room = self.room.as_ref().unwrap();
+		for (i, seat) in room
+			.seats
+			.iter()
+			.enumerate()
+			.filter_map(|(i, s)| s.as_ref().map(|s| (i, s)))
+		{
+			for result in &results {
+				if seat.guest.id == result.guest_id {
+					let hand = if seat.fold {
+						"fold".to_string()
+					} else {
+						// TODO: find cards in showdown
+						"not fold".to_string()
+					};
+					println!("{i}: {} ({hand}) {:+}", seat.guest.name, result.diff);
+					break;
+				}
+			}
+		}
+
+		Ok(())
+	}
+
 	pub async fn fold(&mut self) -> anyhow::Result<()> {
 		let game_id = self.game.as_ref().unwrap().id;
 		let token = self.token.as_ref().unwrap();
 
 		let mut response = self
 			.awc
-			.post(format!("{}/games/{}/fold", self.server_addr, game_id))
+			.post(format!("{}/games/{game_id}/fold", self.server_addr))
 			.bearer_auth(token)
 			.send()
 			.await
@@ -249,7 +304,7 @@ impl Client {
 
 		println!("----------------------------------------");
 		println!(
-			"round: {}, pot: {}, common: {}",
+			"round: {}, pot: {}, common: ({})",
 			game.round,
 			game.pot,
 			self.pretty_common()

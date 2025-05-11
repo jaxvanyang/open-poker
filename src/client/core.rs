@@ -117,6 +117,7 @@ impl Client {
 				self.ready().await?;
 				self.play().await?;
 				sprintln!("game is over");
+				self.print_game_result().await?;
 			}
 			["exit"] => {
 				exit(0);
