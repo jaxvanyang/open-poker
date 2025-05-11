@@ -5,7 +5,6 @@ async fn main() {
 	let mut client = Client::default();
 
 	loop {
-		// FIXME: sync before every run
 		let result = client.run().await;
 		if let Err(err) = result {
 			sprintln!("command failed: {err}");

@@ -7,9 +7,9 @@ use crate::{Card, Game, Room, client::ErrorResponse, sprintln};
 use super::{Client, error::anyhow_error};
 
 #[derive(Debug, Deserialize)]
-struct RoomResponse {
-	room: Room,
-	game: Option<Game>,
+pub struct RoomResponse {
+	pub room: Room,
+	pub game: Option<Game>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -99,7 +99,7 @@ impl Client {
 				}
 			} else {
 				let resp: ErrorResponse = room_resp.json().await?;
-				sprintln!("failed to retrive game info: {}", resp);
+				sprintln!("failed to retrive game info: {resp}");
 			}
 
 			Self::tick().await;

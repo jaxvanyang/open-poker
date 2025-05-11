@@ -5,6 +5,8 @@ use serde::Deserialize;
 
 use crate::{Card, Game, Guest, Room, sprintln};
 
+use super::{error::anyhow_error, game::RoomResponse};
+
 #[derive(Debug, Deserialize)]
 pub struct ErrorResponse {
 	pub error: String,
@@ -62,6 +64,31 @@ impl Client {
 		Ok(command)
 	}
 
+	/// Sync status with the server
+	pub async fn sync(&mut self) -> anyhow::Result<()> {
+		if self.room.is_none() {
+			return Ok(());
+		}
+		let room_id = self.room.as_ref().unwrap().id;
+		let mut room_resp = self
+			.awc
+			.get(format!("{}/rooms/{}", self.server_addr, room_id))
+			.send()
+			.await
+			.map_err(anyhow_error)?;
+
+		if room_resp.status().is_success() {
+			let resp: RoomResponse = room_resp.json().await?;
+			self.room = Some(resp.room);
+			self.game = resp.game;
+		} else {
+			let resp: ErrorResponse = room_resp.json().await?;
+			sprintln!("failed to sync with the server: {resp}");
+		}
+
+		Ok(())
+	}
+
 	/// Wait input and execute command
 	///
 	/// # Return
@@ -73,7 +100,10 @@ impl Client {
 		match command[..] {
 			[] => (),
 			["help"] => print_help(),
-			["status"] => self.print_status(),
+			["status"] => {
+				self.sync().await?;
+				self.print_status();
+			}
 			["login", name] => {
 				self.login(name).await?;
 			}
@@ -108,16 +138,16 @@ impl Client {
 			return;
 		}
 		let guest = self.guest.as_ref().unwrap();
-		println!("logined as {}", guest.name);
 
 		if self.room.is_none() {
-			println!("not in a room");
+			println!("logined as {}, not in a room", guest.name);
 			return;
 		}
 
+		let room = self.room.as_ref().unwrap();
+		println!("Room: {}", room.id);
 		println!("seat: name (stack) (bankroll) status");
 		println!("------------------------------------");
-		let room = self.room.as_ref().unwrap();
 		for (i, seat) in room.seats.iter().enumerate() {
 			if seat.is_none() {
 				continue;
