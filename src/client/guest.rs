@@ -16,9 +16,7 @@ impl Client {
 		let mut response = self
 			.awc
 			.post(format!("{}/guests", self.server_addr))
-			.send_form(&json!({
-				"name": name,
-			}))
+			.send_form(&json!({"name": name}))
 			.await
 			.map_err(anyhow_error)?;
 

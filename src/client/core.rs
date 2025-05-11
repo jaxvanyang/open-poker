@@ -115,7 +115,13 @@ impl Client {
 			}
 			["ready"] => {
 				self.ready().await?;
-				self.play().await?;
+
+				sprintln!("waiting...");
+				self.wait_game().await?;
+				sprintln!("game started");
+				println!("Your hand: {}", self.pretty_hand());
+
+				while self.play().await.is_err() {}
 				sprintln!("game is over");
 				self.print_game_result().await?;
 			}

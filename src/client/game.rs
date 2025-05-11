@@ -1,6 +1,7 @@
 use std::process::exit;
 
 use serde::Deserialize;
+use serde_json::json;
 
 use crate::{Card, Game, GameResult, Room, client::ErrorResponse, sprintln};
 
@@ -15,6 +16,11 @@ pub struct RoomResponse {
 #[derive(Debug, Deserialize)]
 struct HandResponse {
 	hand: Vec<Card>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CommonResponse {
+	cards: Vec<Card>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,21 +120,17 @@ impl Client {
 	}
 
 	pub async fn play(&mut self) -> anyhow::Result<()> {
-		sprintln!("waiting...");
-		self.wait_game().await?;
-		sprintln!("game started");
-		println!("Your hand: {}", self.pretty_hand());
-
-		sprintln!("waiting...");
-		self.wait_turn().await?;
-		// game is over
-		if self.game.as_ref().unwrap().is_over() {
-			return Ok(());
-		}
-		sprintln!("it's your turn now");
-		self.print_game_status();
-
 		loop {
+			sprintln!("waiting...");
+			self.wait_turn().await?;
+			// game is over
+			if self.game.as_ref().unwrap().is_over() {
+				return Ok(());
+			}
+			sprintln!("it's your turn now");
+			self.sync_game().await?;
+			self.print_game_status();
+
 			let command = Client::read_command()?;
 			let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
 			match command[..] {
@@ -136,15 +138,28 @@ impl Client {
 					continue;
 				}
 				["help"] => print_help(),
-				["status"] => self.print_game_status(),
+				["status"] => {
+					self.sync_game().await?;
+					self.print_game_status();
+				}
 				["fold"] => {
 					let result = self.fold().await;
 					if let Err(err) = result {
 						sprintln!("failed to fold: {err}");
 					}
 				}
-				["check"] => todo!(),
-				["call"] => todo!(),
+				["check"] => {
+					let result = self.check().await;
+					if let Err(err) = result {
+						sprintln!("failed to check: {err}");
+					}
+				}
+				["call"] => {
+					let result = self.call().await;
+					if let Err(err) = result {
+						sprintln!("failed to call: {err}");
+					}
+				}
 				["raise", chips] => todo!(),
 				["allin"] => todo!(),
 				["exit"] => exit(0),
@@ -228,19 +243,70 @@ impl Client {
 			self.game = resp.game;
 		} else {
 			let resp: ErrorResponse = response.json().await?;
-			sprintln!("failed fold in the room: {}", resp);
+			sprintln!("failed to fold in the room: {}", resp);
 		}
 
 		Ok(())
 	}
 
-	// pub async fn check(&mut self) -> Result<()> {
-	// 	todo!()
-	// }
+	pub async fn check(&mut self) -> anyhow::Result<()> {
+		let game_id = self.game.as_ref().unwrap().id;
+		let token = self.token.as_ref().unwrap();
 
-	// pub async fn call(&mut self) -> Result<()> {
-	// 	todo!()
-	// }
+		let mut response = self
+			.awc
+			.post(format!("{}/games/{game_id}/bets", self.server_addr))
+			.bearer_auth(token)
+			.send_form(&json!({"chips": 0}))
+			.await
+			.map_err(anyhow_error)?;
+
+		if response.status().is_success() {
+			let resp: RoomResponse = response.json().await?;
+			sprintln!("checked in the room: {}", resp.room.id);
+			self.room = Some(resp.room);
+			self.game = resp.game;
+		} else {
+			let resp: ErrorResponse = response.json().await?;
+			sprintln!("failed to check in the room: {}", resp);
+		}
+
+		Ok(())
+	}
+
+	pub async fn call(&mut self) -> anyhow::Result<()> {
+		let game_id = self.game.as_ref().unwrap().id;
+		let token = self.token.as_ref().unwrap();
+		let guest_id = self.guest.as_ref().unwrap().id;
+		let room = self.room.as_ref().unwrap();
+		let mut chips = 0;
+		for seat in room.seats.iter().filter_map(|s| s.as_ref()) {
+			if seat.guest.id == guest_id {
+				chips = room.max_bet() - seat.bet;
+				break;
+			}
+		}
+
+		let mut response = self
+			.awc
+			.post(format!("{}/games/{game_id}/bets", self.server_addr))
+			.bearer_auth(token)
+			.send_form(&json!({"chips": chips}))
+			.await
+			.map_err(anyhow_error)?;
+
+		if response.status().is_success() {
+			let resp: RoomResponse = response.json().await?;
+			sprintln!("called in the room: {}", resp.room.id);
+			self.room = Some(resp.room);
+			self.game = resp.game;
+		} else {
+			let resp: ErrorResponse = response.json().await?;
+			sprintln!("failed to call in the room: {}", resp);
+		}
+
+		Ok(())
+	}
 
 	// pub async fn raise(&mut self, chips: usize) -> Result<()> {
 	// 	todo!()
@@ -257,7 +323,7 @@ impl Client {
 			return s;
 		}
 		s.push_str(&cards[0].to_string());
-		for i in 1..s.len() {
+		for i in 1..cards.len() {
 			s.push_str(&format!(", {}", cards[i]));
 		}
 
@@ -270,6 +336,29 @@ impl Client {
 
 	pub fn pretty_common(&self) -> String {
 		Self::pretty_cards(&self.common)
+	}
+
+	/// Sync game status with the server
+	pub async fn sync_game(&mut self) -> anyhow::Result<()> {
+		self.sync().await?;
+
+		let game_id = self.game.as_ref().unwrap().id;
+		let mut resp = self
+			.awc
+			.get(format!("{}/games/{game_id}/common", self.server_addr))
+			.send()
+			.await
+			.map_err(anyhow_error)?;
+
+		if resp.status().is_success() {
+			let resp: CommonResponse = resp.json().await?;
+			self.common = resp.cards;
+		} else {
+			let resp: ErrorResponse = resp.json().await?;
+			sprintln!("failed to sync with the server: {resp}");
+		}
+
+		Ok(())
 	}
 
 	fn print_game_status(&self) {
