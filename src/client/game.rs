@@ -32,19 +32,19 @@ impl Client {
 				.map_err(anyhow_error)?;
 
 			if response.status().is_success() {
-				let mut should_break = false;
 				let resp: RoomResponse = response.json().await?;
+				assert!(resp.game.is_some());
 				self.game = resp.game;
-				if let Some(game) = &self.game {
-					if resp.room.seats[game.position]
-						.as_ref()
-						.is_some_and(|s| s.guest.id == guest_id)
-					{
-						should_break = true;
-					}
-				} else {
+				let game = self.game.as_ref().unwrap();
+				let mut should_break = game.is_over();
+				// it's my turn now
+				if resp.room.seats[game.position]
+					.as_ref()
+					.is_some_and(|s| s.guest.id == guest_id)
+				{
 					should_break = true;
 				}
+
 				self.room = Some(resp.room);
 				if should_break {
 					break;
@@ -61,6 +61,10 @@ impl Client {
 	}
 
 	/// Wait for game to begin
+	///
+	/// # Note
+	///
+	/// After calling this, self.game should always be some
 	pub async fn wait_game(&mut self) -> anyhow::Result<()> {
 		let room_id = self.room.as_ref().unwrap().id;
 		loop {
@@ -87,7 +91,7 @@ impl Client {
 						.send()
 						.await
 						.map_err(anyhow_error)?;
-					if hand_resp.status().is_success() {
+					if !game.is_over() && hand_resp.status().is_success() {
 						let resp: HandResponse = hand_resp.json().await?;
 						self.hand = resp.hand;
 						break;
@@ -113,7 +117,7 @@ impl Client {
 		sprintln!("waiting...");
 		self.wait_turn().await?;
 		// game is over
-		if self.game.is_none() {
+		if self.game.as_ref().unwrap().is_over() {
 			return Ok(());
 		}
 		sprintln!("it's your turn now");
@@ -142,7 +146,7 @@ impl Client {
 				_ => sprintln!("unknown command or wrong usage"),
 			}
 
-			if self.game.as_ref().is_some_and(|g| g.is_over()) {
+			if self.game.as_ref().unwrap().is_over() {
 				break;
 			}
 		}
