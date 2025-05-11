@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use rusqlite::{ToSql, types::FromSql};
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 use super::Room;
 use crate::error::{Result, forbidden_error};
@@ -30,16 +31,16 @@ impl Round {
 
 	/// Return the next round
 	///
-	/// # Return
+	/// # Panic
 	///
-	/// Finish's next round is still Finish for convenience
+	/// When self is over
 	pub fn next_round(&self) -> Self {
 		match self {
 			Round::PreFlop => Round::Flop,
 			Round::Flop => Round::Turn,
 			Round::Turn => Round::River,
 			Round::River => Round::Over,
-			Round::Over => Round::Over,
+			Round::Over => panic!("no next round"),
 		}
 	}
 }
@@ -114,7 +115,9 @@ impl Game {
 			}
 		}
 
-		Err(forbidden_error("invalid operation"))
+		debug!("game should be over");
+
+		Ok(())
 	}
 
 	/// Pass control to the next player
@@ -129,8 +132,8 @@ impl Game {
 	///
 	/// Return ture if round changed
 	pub fn update(&mut self, room: &Room) -> bool {
-		// all fold except one
-		if room.player_count() == 1 {
+		// all fold except one or all remaining allin
+		if room.player_count() == 1 || room.all_allin() {
 			self.round = Round::Over;
 			return true;
 		}

@@ -64,6 +64,14 @@ impl Room {
 			.count()
 	}
 
+	/// Whether all remaining players allin
+	pub fn all_allin(&self) -> bool {
+		self.seats
+			.iter()
+			.filter(|s| s.as_ref().is_some_and(|s| !s.fold && !s.allin()))
+			.count() == 0
+	}
+
 	/// Are all players ready
 	pub fn all_ready(&self) -> bool {
 		for seat in &self.seats {
