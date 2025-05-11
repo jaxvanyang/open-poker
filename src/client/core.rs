@@ -121,7 +121,14 @@ impl Client {
 				sprintln!("game started");
 				println!("Your hand: {}", self.pretty_hand());
 
-				while self.play().await.is_err() {}
+				loop {
+					let result = self.play().await;
+					if let Err(err) = result {
+						sprintln!("error: {err}");
+					} else {
+						break;
+					}
+				}
 				sprintln!("game is over");
 				self.print_game_result().await?;
 			}

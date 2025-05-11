@@ -160,8 +160,18 @@ impl Client {
 						sprintln!("failed to call: {err}");
 					}
 				}
-				["raise", chips] => todo!(),
-				["allin"] => todo!(),
+				["raise", chips] => {
+					let result = self.raise(chips.parse()?).await;
+					if let Err(err) = result {
+						sprintln!("failed to raise: {err}");
+					}
+				}
+				["allin"] => {
+					let result = self.allin().await;
+					if let Err(err) = result {
+						sprintln!("failed to allin: {err}");
+					}
+				}
 				["exit"] => exit(0),
 				_ => sprintln!("unknown command or wrong usage"),
 			}
@@ -308,13 +318,72 @@ impl Client {
 		Ok(())
 	}
 
-	// pub async fn raise(&mut self, chips: usize) -> Result<()> {
-	// 	todo!()
-	// }
+	pub async fn raise(&mut self, mut chips: usize) -> anyhow::Result<()> {
+		let game_id = self.game.as_ref().unwrap().id;
+		let token = self.token.as_ref().unwrap();
+		let guest_id = self.guest.as_ref().unwrap().id;
+		let room = self.room.as_ref().unwrap();
+		for seat in room.seats.iter().filter_map(|s| s.as_ref()) {
+			if seat.guest.id == guest_id {
+				chips += room.max_bet() - seat.bet;
+				break;
+			}
+		}
 
-	// pub async fn allin(&mut self) -> Result<()> {
-	// 	todo!()
-	// }
+		let mut response = self
+			.awc
+			.post(format!("{}/games/{game_id}/bets", self.server_addr))
+			.bearer_auth(token)
+			.send_form(&json!({"chips": chips}))
+			.await
+			.map_err(anyhow_error)?;
+
+		if response.status().is_success() {
+			let resp: RoomResponse = response.json().await?;
+			sprintln!("raised in the room: {}", resp.room.id);
+			self.room = Some(resp.room);
+			self.game = resp.game;
+		} else {
+			let resp: ErrorResponse = response.json().await?;
+			sprintln!("failed to raise in the room: {}", resp);
+		}
+
+		Ok(())
+	}
+
+	pub async fn allin(&mut self) -> anyhow::Result<()> {
+		let game_id = self.game.as_ref().unwrap().id;
+		let token = self.token.as_ref().unwrap();
+		let guest_id = self.guest.as_ref().unwrap().id;
+		let room = self.room.as_ref().unwrap();
+		let mut chips = 0;
+		for seat in room.seats.iter().filter_map(|s| s.as_ref()) {
+			if seat.guest.id == guest_id {
+				chips = seat.stack;
+				break;
+			}
+		}
+
+		let mut response = self
+			.awc
+			.post(format!("{}/games/{game_id}/bets", self.server_addr))
+			.bearer_auth(token)
+			.send_form(&json!({"chips": chips}))
+			.await
+			.map_err(anyhow_error)?;
+
+		if response.status().is_success() {
+			let resp: RoomResponse = response.json().await?;
+			sprintln!("allined in the room: {}", resp.room.id);
+			self.room = Some(resp.room);
+			self.game = resp.game;
+		} else {
+			let resp: ErrorResponse = response.json().await?;
+			sprintln!("failed to allin in the room: {}", resp);
+		}
+
+		Ok(())
+	}
 
 	/// Convert cards to string for printing
 	pub fn pretty_cards(cards: &[Card]) -> String {
