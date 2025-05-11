@@ -7,8 +7,8 @@ use tracing::info;
 use crate::{
 	Round,
 	db::{
-		bet as execute_bet, calc_result, fold as execute_fold, game_by_id, get_flop, get_hand,
-		get_results, get_river, get_turn, guest_by_id, guest_by_token, new_transaction,
+		bet as execute_bet, calc_result, fold as execute_fold, game_by_id, get_common, get_flop,
+		get_hand, get_results, get_river, get_turn, guest_by_id, guest_by_token, new_transaction,
 		open_connection, room_by_id, update_round,
 	},
 	error::{Result, bad_request_error, forbidden_error, not_found_error, unauthorized_error},
@@ -185,17 +185,7 @@ pub async fn common(path: web::Path<usize>) -> Result<HttpResponse> {
 	let tx = conn.transaction()?;
 
 	let game = game_by_id(&tx, game_id)?.ok_or(not_found_error("game not found"))?;
-	let mut cards = Vec::new();
-
-	if game.round >= Round::Flop {
-		cards.extend(get_flop(&tx, game_id)?.unwrap());
-	}
-	if game.round >= Round::Turn {
-		cards.push(get_turn(&tx, game_id)?.unwrap());
-	}
-	if game.round >= Round::River {
-		cards.push(get_river(&tx, game_id)?.unwrap());
-	}
+	let cards = get_common(&tx, &game)?;
 
 	tx.commit()?;
 

@@ -1,6 +1,6 @@
 use rusqlite::{OptionalExtension, Transaction};
 
-use crate::db::game_by_id;
+use crate::db::{game_by_id, get_common, get_hand};
 use crate::error::{Result, conflict_error};
 use crate::{Game, Guest, Room, Seat};
 
@@ -181,9 +181,18 @@ pub fn calc_result(tx: &Transaction, room: &mut Room, game: &Game) -> Result<()>
 		.filter_map(|s| s.as_ref().map(|s| s.guest.id))
 		.collect();
 
-	let winner_id = player_ids[0];
-	if player_ids.len() > 1 {
-		todo!("showdown logic");
+	let mut winner_id = player_ids[0];
+	let common = get_common(tx, game)?;
+	let mut hands = Vec::new();
+	for id in &player_ids {
+		hands.push(get_hand(tx, game.id, *id)?.unwrap());
+	}
+	for i in 1..hands.len() {
+		let id = player_ids[i];
+		// let h1 = best_hand(&common, &hands[winner_id]);
+		// let h2 = best_hand(&common, &hands[i]);
+		// match compare_hand(&h1, &h2) {};
+		todo!("compare");
 	}
 
 	// TODO: side pot logic

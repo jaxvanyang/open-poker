@@ -1,4 +1,4 @@
-use crate::{Card, Game, GameResult, Room, error::Result};
+use crate::{Card, Game, GameResult, Room, Round, error::Result};
 use rusqlite::{OptionalExtension, Transaction};
 
 use super::{bet, max_id};
@@ -126,6 +126,22 @@ pub fn get_river(tx: &Transaction, game_id: usize) -> Result<Option<Card>> {
 			|row| row.get(0),
 		)
 		.optional()?)
+}
+
+pub fn get_common(tx: &Transaction, game: &Game) -> Result<Vec<Card>> {
+	let mut cards = Vec::new();
+
+	if game.round >= Round::Flop {
+		cards.extend(get_flop(&tx, game.id)?.unwrap());
+	}
+	if game.round >= Round::Turn {
+		cards.push(get_turn(&tx, game.id)?.unwrap());
+	}
+	if game.round >= Round::River {
+		cards.push(get_river(&tx, game.id)?.unwrap());
+	}
+
+	Ok(cards)
 }
 
 pub fn update_round(tx: &Transaction, room: &Room, game: &mut Game) -> Result<bool> {
