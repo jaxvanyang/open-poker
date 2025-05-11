@@ -8,8 +8,8 @@ pub fn max_game_id(tx: &Transaction) -> Result<usize> {
 }
 
 pub fn new_game(tx: &Transaction, room: &mut Room) -> Result<Game> {
-	// correct room first
-	room.correct();
+	// pass SB only before a new game
+	room.pass_sb();
 	tx.execute("update room set sb = ?1 where id = ?2", (room.sb, room.id))?;
 
 	let id = max_game_id(tx)? + 1;
