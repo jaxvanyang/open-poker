@@ -68,6 +68,9 @@ impl Client {
 			return Err(anyhow!("you should login first"));
 		}
 		let token = self.token.as_ref().unwrap();
+		if self.room.is_none() {
+			return Err(anyhow!("you are not in a room"));
+		}
 		let room = self.room.as_ref().unwrap();
 
 		let mut response = self
