@@ -62,7 +62,7 @@ pub async fn join(auth: BearerAuth, path: web::Path<usize>) -> Result<HttpRespon
 	Ok(HttpResponse::Ok().json(json!({"room": room})))
 }
 
-/// Get the room and running game
+/// Get the room and the last game
 #[get("/{room_id}")]
 pub async fn get_room(path: web::Path<usize>) -> Result<HttpResponse> {
 	let room_id = path.into_inner();
@@ -72,7 +72,8 @@ pub async fn get_room(path: web::Path<usize>) -> Result<HttpResponse> {
 
 	let room = room_by_id(&tx, room_id)?.ok_or(not_found_error("room not found"))?;
 
-	let game = get_running_game(&tx, room_id)?;
+	let games = get_games(&tx, room_id, false, 1, 0)?;
+	let game = games.get(0);
 
 	commit(tx)?;
 
