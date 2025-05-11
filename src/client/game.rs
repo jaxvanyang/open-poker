@@ -235,15 +235,19 @@ impl Client {
 				format!("bet {}", seat.bet)
 			};
 			let mark = if seat.guest.id == guest.id {
-				format!("< {}", self.pretty_hand())
+				format!("({}) (you)", self.pretty_hand())
 			} else if game.position == i {
 				"...".to_string()
 			} else {
 				"".to_string()
 			};
-			println!("{i}: {} {status} {mark}", seat.guest.name);
+			println!(
+				"{i}: {} {status} ({}) ({}) {mark}",
+				seat.guest.name, seat.stack, seat.guest.bankroll
+			);
 		}
 
+		println!("----------------------------------------");
 		println!(
 			"round: {}, pot: {}, common: {}",
 			game.round,

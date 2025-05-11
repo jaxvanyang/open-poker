@@ -114,6 +114,9 @@ impl Client {
 			println!("not in a room");
 			return;
 		}
+
+		println!("seat: name (stack) (bankroll) status");
+		println!("------------------------------------");
 		let room = self.room.as_ref().unwrap();
 		for (i, seat) in room.seats.iter().enumerate() {
 			if seat.is_none() {
@@ -121,8 +124,15 @@ impl Client {
 			}
 			let seat = seat.as_ref().unwrap();
 			let ready = if seat.ready { "ready" } else { "not ready" };
-			let mark = if seat.guest.id == guest.id { "<" } else { "" };
-			println!("{i}: {} {ready} {mark}", seat.guest.name);
+			let mark = if seat.guest.id == guest.id {
+				"(you)"
+			} else {
+				""
+			};
+			println!(
+				"{i}: {} ({}) ({}) {ready} {mark}",
+				seat.guest.name, seat.stack, seat.guest.bankroll
+			);
 		}
 	}
 }
