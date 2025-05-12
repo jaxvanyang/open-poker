@@ -4,7 +4,7 @@ use rand::seq::SliceRandom;
 use rusqlite::{ToSql, types::FromSql};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Suit {
 	Spade,
 	Heart,
@@ -23,7 +23,7 @@ impl Iterator for SuitIter {
 			1 => Some(Suit::Spade),
 			2 => Some(Suit::Heart),
 			3 => Some(Suit::Diamond),
-			4 => Some(Suit::Diamond),
+			4 => Some(Suit::Club),
 			_ => None,
 		};
 
@@ -64,43 +64,43 @@ impl Display for Suit {
 	}
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Numeral {
-	A = 1,
-	Two = 2,
-	Three = 3,
-	Four = 4,
-	Five = 5,
-	Six = 6,
-	Seven = 7,
-	Eight = 8,
-	Nine = 9,
-	Ten = 10,
+	Two,
+	Three,
+	Four,
+	Five,
+	Six,
+	Seven,
+	Eight,
+	Nine,
+	Ten,
+	A,
 }
 
 impl Display for Numeral {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		let numeral = match self {
-			Numeral::A => 'A',
-			Numeral::Two => '2',
-			Numeral::Three => '3',
-			Numeral::Four => '4',
-			Numeral::Five => '5',
-			Numeral::Six => '6',
-			Numeral::Seven => '7',
-			Numeral::Eight => '8',
-			Numeral::Nine => '9',
-			Numeral::Ten => 'T',
+			Self::A => 'A',
+			Self::Two => '2',
+			Self::Three => '3',
+			Self::Four => '4',
+			Self::Five => '5',
+			Self::Six => '6',
+			Self::Seven => '7',
+			Self::Eight => '8',
+			Self::Nine => '9',
+			Self::Ten => 'T',
 		};
 		write!(f, "{numeral}")
 	}
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Face {
-	J = 11,
-	Q = 12,
-	K = 13,
+	J,
+	Q,
+	K,
 }
 
 impl Display for Face {
@@ -109,9 +109,9 @@ impl Display for Face {
 			f,
 			"{}",
 			match self {
-				Face::J => 'J',
-				Face::Q => 'Q',
-				Face::K => 'K',
+				Self::J => 'J',
+				Self::Q => 'Q',
+				Self::K => 'K',
 			}
 		)
 	}
@@ -123,12 +123,24 @@ pub enum Joker {
 	Black,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rank {
-	Numeral(Numeral),
-	Face(Face),
+	Two,
+	Three,
+	Four,
+	Five,
+	Six,
+	Seven,
+	Eight,
+	Nine,
+	Ten,
+	J,
+	Q,
+	K,
+	A,
 }
 
+/// Iterate from lowest 2 to highest A
 pub struct RankIter {
 	i: u8,
 }
@@ -137,19 +149,19 @@ impl Iterator for RankIter {
 	type Item = Rank;
 	fn next(&mut self) -> Option<Self::Item> {
 		let out = match self.i {
-			1 => Some(Rank::Numeral(Numeral::A)),
-			2 => Some(Rank::Numeral(Numeral::Two)),
-			3 => Some(Rank::Numeral(Numeral::Three)),
-			4 => Some(Rank::Numeral(Numeral::Four)),
-			5 => Some(Rank::Numeral(Numeral::Five)),
-			6 => Some(Rank::Numeral(Numeral::Six)),
-			7 => Some(Rank::Numeral(Numeral::Seven)),
-			8 => Some(Rank::Numeral(Numeral::Eight)),
-			9 => Some(Rank::Numeral(Numeral::Nine)),
-			10 => Some(Rank::Numeral(Numeral::Ten)),
-			11 => Some(Rank::Face(Face::J)),
-			12 => Some(Rank::Face(Face::Q)),
-			13 => Some(Rank::Face(Face::K)),
+			2 => Some(Rank::Two),
+			3 => Some(Rank::Three),
+			4 => Some(Rank::Four),
+			5 => Some(Rank::Five),
+			6 => Some(Rank::Six),
+			7 => Some(Rank::Seven),
+			8 => Some(Rank::Eight),
+			9 => Some(Rank::Nine),
+			10 => Some(Rank::Ten),
+			11 => Some(Rank::J),
+			12 => Some(Rank::Q),
+			13 => Some(Rank::K),
+			14 => Some(Rank::A),
 			_ => None,
 		};
 
@@ -163,25 +175,43 @@ impl Iterator for RankIter {
 
 impl Rank {
 	pub fn iter() -> RankIter {
-		RankIter { i: 1 }
+		RankIter { i: 2 }
+	}
+
+	pub fn as_usize(&self) -> usize {
+		match self {
+			Rank::A => 1,
+			Rank::Two => 2,
+			Rank::Three => 3,
+			Rank::Four => 4,
+			Rank::Five => 5,
+			Rank::Six => 6,
+			Rank::Seven => 7,
+			Rank::Eight => 8,
+			Rank::Nine => 9,
+			Rank::Ten => 10,
+			Rank::J => 11,
+			Rank::Q => 12,
+			Rank::K => 13,
+		}
 	}
 
 	/// Parse database representation
 	pub fn parse(rank: char) -> Self {
 		match rank {
-			'A' => Self::Numeral(Numeral::A),
-			'2' => Self::Numeral(Numeral::Two),
-			'3' => Self::Numeral(Numeral::Three),
-			'4' => Self::Numeral(Numeral::Four),
-			'5' => Self::Numeral(Numeral::Five),
-			'6' => Self::Numeral(Numeral::Six),
-			'7' => Self::Numeral(Numeral::Seven),
-			'8' => Self::Numeral(Numeral::Eight),
-			'9' => Self::Numeral(Numeral::Nine),
-			'T' => Self::Numeral(Numeral::Ten),
-			'J' => Self::Face(Face::J),
-			'Q' => Self::Face(Face::Q),
-			'K' => Self::Face(Face::K),
+			'A' => Self::A,
+			'2' => Self::Two,
+			'3' => Self::Three,
+			'4' => Self::Four,
+			'5' => Self::Five,
+			'6' => Self::Six,
+			'7' => Self::Seven,
+			'8' => Self::Eight,
+			'9' => Self::Nine,
+			'T' => Self::Ten,
+			'J' => Self::J,
+			'Q' => Self::Q,
+			'K' => Self::K,
 			_ => panic!("invalid rank"),
 		}
 	}
@@ -193,18 +223,29 @@ impl Display for Rank {
 			f,
 			"{}",
 			match self {
-				Rank::Numeral(numeral) => numeral.to_string(),
-				Rank::Face(face) => face.to_string(),
+				Self::A => 'A',
+				Self::Two => '2',
+				Self::Three => '3',
+				Self::Four => '4',
+				Self::Five => '5',
+				Self::Six => '6',
+				Self::Seven => '7',
+				Self::Eight => '8',
+				Self::Nine => '9',
+				Self::Ten => 'T',
+				Self::J => 'J',
+				Self::Q => 'Q',
+				Self::K => 'K',
 			}
 		)
 	}
 }
 
 /// French-suited card
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Card {
-	pub suit: Suit,
 	pub rank: Rank,
+	pub suit: Suit,
 }
 
 /// Modern card
@@ -220,8 +261,8 @@ impl Card {
 	/// Create a new sorted deck
 	pub fn new_sorted() -> Deck {
 		let mut deck = Deck::with_capacity(52);
-		for suit in Suit::iter() {
-			for rank in Rank::iter() {
+		for rank in Rank::iter() {
+			for suit in Suit::iter() {
 				deck.push(Card { suit, rank });
 			}
 		}
@@ -262,5 +303,45 @@ impl ToSql for Card {
 impl FromSql for Card {
 	fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
 		Ok(Self::parse(value.as_str()?))
+	}
+}
+
+impl PartialOrd for Card {
+	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+		self.rank.partial_cmp(&other.rank)
+	}
+}
+
+impl Ord for Card {
+	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+		self.rank.cmp(&other.rank)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_unique() {
+		let deck = Card::new_deck();
+		for i in 0..deck.len() {
+			for j in (i + 1)..deck.len() {
+				assert_ne!(deck[i], deck[j]);
+			}
+		}
+	}
+
+	#[test]
+	fn test_order() {
+		let deck = Card::new_sorted();
+		assert!(deck.is_sorted());
+	}
+
+	#[test]
+	fn test_random() {
+		let d1 = Card::new_deck();
+		let d2 = Card::new_deck();
+		assert_ne!(d1, d2);
 	}
 }

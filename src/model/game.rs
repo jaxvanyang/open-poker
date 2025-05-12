@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use super::Room;
-use crate::error::{Result, forbidden_error};
+use crate::error::Result;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum Round {
