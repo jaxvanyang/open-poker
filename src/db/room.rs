@@ -1,8 +1,10 @@
+use std::cmp::Ordering;
+
 use rusqlite::{OptionalExtension, Transaction};
 
 use crate::db::{game_by_id, get_common, get_hand};
 use crate::error::{Result, conflict_error};
-use crate::{Game, Guest, Room, Seat};
+use crate::{Game, Guest, Hand, Room, Seat};
 
 use super::{guest_by_id, max_id};
 
@@ -174,34 +176,40 @@ pub fn fold(tx: &Transaction, room: &mut Room, game: &mut Game) -> Result<()> {
 ///
 /// Only use this function when the game is over
 pub fn calc_result(tx: &Transaction, room: &mut Room, game: &Game) -> Result<()> {
-	let player_ids: Vec<_> = room
+	let ids: Vec<_> = room
 		.seats
 		.iter()
 		.filter(|s| s.as_ref().is_some_and(|s| !s.fold))
 		.filter_map(|s| s.as_ref().map(|s| s.guest.id))
 		.collect();
 
-	let mut winner_id = player_ids[0];
+	let mut win_i = 0;
 	let common = get_common(tx, game)?;
 	let mut hands = Vec::new();
-	for id in &player_ids {
+	for id in &ids {
 		hands.push(get_hand(tx, game.id, *id)?.unwrap());
 	}
 	for i in 1..hands.len() {
-		let id = player_ids[i];
-		// let h1 = best_hand(&common, &hands[winner_id]);
-		// let h2 = best_hand(&common, &hands[i]);
-		// match compare_hand(&h1, &h2) {};
-		todo!("compare");
+		let h1 = Hand::calc_best_hand(&common, &hands[win_i]);
+		let h2 = Hand::calc_best_hand(&common, &hands[i]);
+		match h1.cmp(&h2) {
+			Ordering::Less => {
+				win_i = i;
+			}
+			Ordering::Equal => todo!(),
+			Ordering::Greater => (),
+		}
 	}
+
+	let win_id = ids[win_i];
 
 	// TODO: side pot logic
 	for seat in room.seats.iter_mut().filter_map(|s| s.as_mut()) {
-		let diff = if seat.guest.id == winner_id {
+		let diff = if seat.guest.id == win_id {
 			seat.stack += game.pot;
 			tx.execute(
 				"update seat set stack = ?1 where room_id = ?2 and guest_id = ?3",
-				(seat.stack, room.id, winner_id),
+				(seat.stack, room.id, win_id),
 			)?;
 
 			(game.pot - seat.bet) as isize
