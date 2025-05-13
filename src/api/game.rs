@@ -212,6 +212,7 @@ pub async fn results(path: web::Path<usize>) -> Result<HttpResponse> {
 	Ok(HttpResponse::Ok().json(json!({"results": results})))
 }
 
+#[must_use]
 pub fn game_api() -> actix_web::Scope {
 	web::scope("/games")
 		.service(bet)

@@ -8,6 +8,7 @@ pub struct Guest {
 }
 
 impl Guest {
+	#[must_use]
 	pub fn new(id: usize, name: &str) -> Self {
 		Self {
 			id,

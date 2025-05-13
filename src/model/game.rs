@@ -2,10 +2,8 @@ use std::fmt::Display;
 
 use rusqlite::{ToSql, types::FromSql};
 use serde::{Deserialize, Serialize};
-use tracing::debug;
 
 use super::Room;
-use crate::error::Result;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum Round {
@@ -18,6 +16,11 @@ pub enum Round {
 
 impl Round {
 	/// Parse database representation
+	///
+	/// # Panics
+	///
+	/// Will panic if `round` is not valid
+	#[must_use]
 	pub fn parse(round: &str) -> Self {
 		match round {
 			"preflop" => Self::PreFlop,
@@ -31,9 +34,10 @@ impl Round {
 
 	/// Return the next round
 	///
-	/// # Panic
+	/// # Panics
 	///
-	/// When self is over
+	/// Will panic if self is over
+	#[must_use]
 	pub fn next_round(&self) -> Self {
 		match self {
 			Round::PreFlop => Round::Flop,
@@ -86,6 +90,7 @@ pub struct Game {
 }
 
 impl Game {
+	#[must_use]
 	pub fn new(id: usize, room_id: usize, sb: usize) -> Self {
 		Self {
 			id,
@@ -97,12 +102,13 @@ impl Game {
 		}
 	}
 
+	#[must_use]
 	pub fn is_over(&self) -> bool {
 		self.round == Round::Over
 	}
 
 	/// Correct player position
-	pub fn correct(&mut self, room: &Room) -> Result<()> {
+	pub fn correct(&mut self, room: &Room) {
 		let mut p;
 		for i in 0..Room::MAX_SEATS {
 			p = (self.position + i) % Room::MAX_SEATS;
@@ -111,19 +117,15 @@ impl Game {
 					continue;
 				}
 				self.position = p;
-				return Ok(());
+				return;
 			}
 		}
-
-		debug!("game should be over");
-
-		Ok(())
 	}
 
 	/// Pass control to the next player
-	pub fn pass(&mut self, room: &Room) -> Result<()> {
+	pub fn pass(&mut self, room: &Room) {
 		self.position += 1;
-		self.correct(room)
+		self.correct(room);
 	}
 
 	/// Update round if condition meet
@@ -156,6 +158,7 @@ pub struct GameResult {
 }
 
 impl GameResult {
+	#[must_use]
 	pub fn new(game_id: usize, guest_id: usize, diff: isize) -> Self {
 		Self {
 			game_id,

@@ -73,7 +73,7 @@ pub async fn get_room(path: web::Path<usize>) -> Result<HttpResponse> {
 	let room = room_by_id(&tx, room_id)?.ok_or(not_found_error("room not found"))?;
 
 	let games = get_games(&tx, room_id, false, 1, 0)?;
-	let game = games.get(0);
+	let game = games.first();
 
 	commit(tx)?;
 
@@ -99,9 +99,8 @@ pub async fn ready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Resul
 
 	if room.is_ready(guest.id).unwrap() {
 		return Err(conflict_error("guest is already ready").into());
-	} else {
-		room.ready(guest.id).unwrap();
 	}
+	room.ready(guest.id).unwrap();
 
 	if execute(
 		&tx,
@@ -139,10 +138,10 @@ pub async fn unready(auth: BearerAuth, path: web::Path<usize>) -> actix_web::Res
 		return Err(conflict_error("guest not in the room").into());
 	}
 
-	if !room.is_ready(guest.id).unwrap() {
-		return Err(conflict_error("guest is not ready").into());
-	} else {
+	if room.is_ready(guest.id).unwrap() {
 		room.unready(guest.id).unwrap();
+	} else {
+		return Err(conflict_error("guest is not ready").into());
 	}
 
 	if execute(
@@ -170,12 +169,13 @@ pub async fn current_game(path: web::Path<usize>) -> actix_web::Result<HttpRespo
 
 	let games = get_games(&tx, room_id, false, 1, 0)?;
 	let game = games
-		.get(0)
+		.first()
 		.ok_or(not_found_error("no game has been played in this room"))?;
 
 	Ok(HttpResponse::Ok().json(json!({"game": game})))
 }
 
+#[must_use]
 pub fn room_api() -> actix_web::Scope {
 	web::scope("/rooms")
 		.service(new)

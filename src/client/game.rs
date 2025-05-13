@@ -132,7 +132,7 @@ impl Client {
 			self.print_game_status();
 
 			let command = Client::read_command()?;
-			let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
+			let command: Vec<_> = command.iter().map(std::string::String::as_str).collect();
 			match command[..] {
 				[] => {
 					continue;
@@ -199,9 +199,8 @@ impl Client {
 				let resp: ResultsResponse = resp.json().await?;
 				results = resp.results;
 				break;
-			} else {
-				println!("failed to get game result: ");
 			}
+			println!("failed to get game result: ");
 		}
 
 		println!(
@@ -386,23 +385,26 @@ impl Client {
 	}
 
 	/// Convert cards to string for printing
+	#[must_use]
 	pub fn pretty_cards(cards: &[Card]) -> String {
 		let mut s = String::new();
-		if cards.len() == 0 {
+		if cards.is_empty() {
 			return s;
 		}
 		s.push_str(&cards[0].to_string());
-		for i in 1..cards.len() {
-			s.push_str(&format!(", {}", cards[i]));
+		for card in cards.iter().skip(1) {
+			s.push_str(&format!(", {card}"));
 		}
 
 		s
 	}
 
+	#[must_use]
 	pub fn pretty_hand(&self) -> String {
 		Self::pretty_cards(&self.hand)
 	}
 
+	#[must_use]
 	pub fn pretty_common(&self) -> String {
 		Self::pretty_cards(&self.common)
 	}
@@ -452,7 +454,7 @@ impl Client {
 			} else if game.position == i {
 				"...".to_string()
 			} else {
-				"".to_string()
+				String::new()
 			};
 			println!(
 				"{i}: {} {status} ({}) ({}) {mark}",
@@ -481,5 +483,5 @@ fn print_help() {
 		raise
 		allin
 		exit"
-	)
+	);
 }

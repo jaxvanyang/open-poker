@@ -4,15 +4,15 @@ use rusqlite::{Connection, OptionalExtension, Transaction};
 /// Open connection to the database
 pub fn open_connection() -> Result<Connection> {
 	if cfg!(test) {
-		Connection::open("db/test.db3").map_err(|err| err.into())
+		Connection::open("db/test.db3").map_err(std::convert::Into::into)
 	} else {
-		Connection::open("db/db.db3").map_err(|err| err.into())
+		Connection::open("db/db.db3").map_err(std::convert::Into::into)
 	}
 }
 
 /// Convenience function to create a new transaction and map error
 pub fn new_transaction(conn: &mut Connection) -> Result<Transaction> {
-	conn.transaction().map_err(|err| err.into())
+	conn.transaction().map_err(std::convert::Into::into)
 }
 
 /// Convenience function to execute SQL and map error
@@ -20,12 +20,12 @@ pub fn execute<P>(tx: &Transaction, sql: &str, params: P) -> Result<usize>
 where
 	P: rusqlite::Params,
 {
-	tx.execute(sql, params).map_err(|err| err.into())
+	tx.execute(sql, params).map_err(std::convert::Into::into)
 }
 
 /// Convenience function to commit a transaction and map error
 pub fn commit(tx: Transaction) -> Result<()> {
-	tx.commit().map_err(|err| err.into())
+	tx.commit().map_err(std::convert::Into::into)
 }
 
 #[cfg(test)]
@@ -44,5 +44,5 @@ pub(crate) fn max_id(tx: &Transaction, table: &str) -> Result<usize> {
 	)
 	.optional()
 	.map(|id| id.unwrap_or(0))
-	.map_err(|err| err.into())
+	.map_err(std::convert::Into::into)
 }

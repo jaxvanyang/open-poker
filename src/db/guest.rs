@@ -43,7 +43,7 @@ pub fn new_guest_token(tx: &Transaction, guest: &Guest) -> Result<String> {
 	let mut token: String;
 	loop {
 		token = (0..64).map(|_| rng.sample(Alphanumeric) as char).collect();
-		if !has_guest_token(&tx, &token)? {
+		if !has_guest_token(tx, &token)? {
 			break;
 		}
 	}

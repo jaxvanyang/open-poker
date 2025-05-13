@@ -13,6 +13,7 @@ pub struct Seat {
 
 impl Seat {
 	/// Whether the guest has allined
+	#[must_use]
 	pub fn allin(&self) -> bool {
 		self.stack == 0
 	}

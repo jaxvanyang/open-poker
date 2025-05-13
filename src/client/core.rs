@@ -59,7 +59,10 @@ impl Client {
 			println!();
 			exit(0);
 		}
-		let command = input.split_whitespace().map(|s| s.to_string()).collect();
+		let command = input
+			.split_whitespace()
+			.map(std::string::ToString::to_string)
+			.collect();
 
 		Ok(command)
 	}
@@ -96,7 +99,7 @@ impl Client {
 	/// Err if command failed
 	pub async fn run(&mut self) -> anyhow::Result<()> {
 		let command = Client::read_command()?;
-		let command: Vec<_> = command.iter().map(|s| s.as_str()).collect();
+		let command: Vec<_> = command.iter().map(std::string::String::as_str).collect();
 		match command[..] {
 			[] => (),
 			["help"] => print_help(),
@@ -143,7 +146,7 @@ impl Client {
 
 	/// Sleep for a tick
 	pub async fn tick() {
-		sleep(Duration::from_secs_f32(Self::TICK)).await
+		sleep(Duration::from_secs_f32(Self::TICK)).await;
 	}
 
 	fn print_status(&self) {
@@ -191,5 +194,5 @@ fn print_help() {
 		join <room_id>
 		ready
 		exit"
-	)
+	);
 }

@@ -132,13 +132,13 @@ pub fn get_common(tx: &Transaction, game: &Game) -> Result<Vec<Card>> {
 	let mut cards = Vec::new();
 
 	if game.round >= Round::Flop {
-		cards.extend(get_flop(&tx, game.id)?.unwrap());
+		cards.extend(get_flop(tx, game.id)?.unwrap());
 	}
 	if game.round >= Round::Turn {
-		cards.push(get_turn(&tx, game.id)?.unwrap());
+		cards.push(get_turn(tx, game.id)?.unwrap());
 	}
 	if game.round >= Round::River {
-		cards.push(get_river(&tx, game.id)?.unwrap());
+		cards.push(get_river(tx, game.id)?.unwrap());
 	}
 
 	Ok(cards)

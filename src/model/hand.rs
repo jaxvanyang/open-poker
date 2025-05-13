@@ -37,6 +37,10 @@ impl PartialEq for Hand {
 }
 
 impl Hand {
+	/// # Panics
+	///
+	/// Will panic if the length of `common` or `hand` is not right
+	#[must_use]
 	pub fn calc_best_hand(common: &[Card], hand: &[Card]) -> Self {
 		assert_eq!(common.len(), 5);
 		assert_eq!(hand.len(), 2);
@@ -49,13 +53,7 @@ impl Hand {
 				let cards: Vec<_> = cards
 					.iter()
 					.enumerate()
-					.filter_map(|(k, c)| {
-						if k != i && k != j {
-							Some(c.clone())
-						} else {
-							None
-						}
-					})
+					.filter_map(|(k, c)| if k != i && k != j { Some(*c) } else { None })
 					.collect();
 				let hand = Self::new(&cards);
 				best_hand = best_hand.max(hand);
@@ -67,9 +65,10 @@ impl Hand {
 
 	/// Create a new five cards hand
 	///
-	/// # Panic
+	/// # Panics
 	///
-	/// Length of `cards` must be 5
+	/// Will panic if the length of `cards` is not 5
+	#[must_use]
 	pub fn new(cards: &[Card]) -> Self {
 		assert!(cards.len() == 5);
 		let mut cards: Vec<_> = cards.into();
@@ -77,7 +76,7 @@ impl Hand {
 		cards.reverse();
 		let kind = Self::calc_kind(&cards);
 
-		Self { cards, kind }.normalized()
+		Self { kind, cards }.normalized()
 	}
 
 	/// Make cards easier to compare from first to last
@@ -242,8 +241,8 @@ impl Hand {
 		if first == 1 {
 			first = 14;
 		}
-		for i in 1..5 {
-			if cards[i].rank.as_usize() != first - i {
+		for (i, card) in cards.iter().enumerate().skip(1) {
+			if card.rank.as_usize() != first - i {
 				return false;
 			}
 		}
@@ -255,8 +254,8 @@ impl Hand {
 		if cards[0].rank != Rank::A {
 			return false;
 		}
-		for i in 1..5 {
-			if cards[i].rank.as_usize() != (6 - i) {
+		for (i, card) in cards.iter().enumerate().skip(1) {
+			if card.rank.as_usize() != (6 - i) {
 				return false;
 			}
 		}

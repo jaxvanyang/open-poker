@@ -1,4 +1,4 @@
-use open_poker::{client::*, sprintln};
+use open_poker::{client::Client, sprintln};
 
 #[actix_web::main]
 async fn main() {

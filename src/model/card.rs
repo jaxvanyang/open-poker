@@ -36,11 +36,13 @@ impl Iterator for SuitIter {
 }
 
 impl Suit {
+	#[must_use]
 	pub fn iter() -> SuitIter {
 		SuitIter { i: 1 }
 	}
 
 	/// Parse database representation
+	#[must_use]
 	pub fn parse(suit: char) -> Self {
 		match suit {
 			'S' => Self::Spade,
@@ -174,10 +176,12 @@ impl Iterator for RankIter {
 }
 
 impl Rank {
+	#[must_use]
 	pub fn iter() -> RankIter {
 		RankIter { i: 2 }
 	}
 
+	#[must_use]
 	pub fn as_usize(&self) -> usize {
 		match self {
 			Rank::A => 1,
@@ -197,6 +201,7 @@ impl Rank {
 	}
 
 	/// Parse database representation
+	#[must_use]
 	pub fn parse(rank: char) -> Self {
 		match rank {
 			'A' => Self::A,
@@ -259,11 +264,12 @@ pub type Deck = Vec<Card>;
 
 impl Card {
 	/// Create a new sorted deck
+	#[must_use]
 	pub fn new_sorted() -> Deck {
 		let mut deck = Deck::with_capacity(52);
 		for rank in Rank::iter() {
 			for suit in Suit::iter() {
-				deck.push(Card { suit, rank });
+				deck.push(Card { rank, suit });
 			}
 		}
 
@@ -271,6 +277,7 @@ impl Card {
 	}
 
 	/// Create a new shulled deck
+	#[must_use]
 	pub fn new_deck() -> Deck {
 		let mut deck = Self::new_sorted();
 		deck.shuffle(&mut rand::rng());
@@ -279,6 +286,11 @@ impl Card {
 	}
 
 	/// Parse database representation
+	///
+	/// # Panics
+	///
+	/// Will panic if the input is not valid
+	#[must_use]
 	pub fn parse(card: &str) -> Self {
 		assert!(card.len() == 2);
 		Self {
@@ -308,7 +320,7 @@ impl FromSql for Card {
 
 impl PartialOrd for Card {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.rank.partial_cmp(&other.rank)
+		Some(self.rank.cmp(&other.rank))
 	}
 }
 

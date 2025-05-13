@@ -26,6 +26,7 @@ pub async fn login(form: web::Form<LoginForm>) -> Result<HttpResponse> {
 	})))
 }
 
+#[must_use]
 pub fn guest_api() -> actix_web::Scope {
 	web::scope("/guests").service(login)
 }

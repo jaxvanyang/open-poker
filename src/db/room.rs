@@ -103,16 +103,7 @@ pub fn get_games(
 /// Get current running game of the room
 pub fn get_running_game(tx: &Transaction, id: usize) -> Result<Option<Game>> {
 	let game = get_games(tx, id, false, 1, 0)?.pop();
-	Ok(match game {
-		Some(game) => {
-			if game.is_over() {
-				None
-			} else {
-				Some(game)
-			}
-		}
-		None => None,
-	})
+	Ok(game.filter(|game| !game.is_over()))
 }
 
 /// Bet as the current player of the game
@@ -142,7 +133,7 @@ pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> 
 		(game.pot, game.id),
 	)?;
 
-	game.pass(&room)?;
+	game.pass(room);
 	tx.execute(
 		"update game set position = ?1 where id = ?2",
 		(game.position, game.id),
@@ -154,14 +145,14 @@ pub fn bet(tx: &Transaction, room: &mut Room, game: &mut Game, chips: usize) -> 
 /// Fold as the current player of the game
 pub fn fold(tx: &Transaction, room: &mut Room, game: &mut Game) -> Result<()> {
 	let seat = room.seats[game.position].as_mut().unwrap();
-	assert_eq!(seat.fold, false);
+	assert!(!seat.fold);
 	seat.fold = true;
 	tx.execute(
 		"update seat set fold = true where room_id = ?1 and guest_id = ?2",
 		(room.id, seat.guest.id),
 	)?;
 
-	game.pass(&room)?;
+	game.pass(room);
 	tx.execute(
 		"update game set position = ?1 where id = ?2",
 		(game.position, game.id),

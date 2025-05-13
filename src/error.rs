@@ -28,7 +28,7 @@ impl Display for ErrorType {
 	}
 }
 
-/// Convience type for actix_web::Error
+/// Convience type for `actix_web::Error`
 #[derive(Debug)]
 pub struct Error {
 	pub r#type: ErrorType,

@@ -1,5 +1,5 @@
 use actix_web::{App, HttpServer};
-use open_poker::api::*;
+use open_poker::api::{game_api, guest_api, room_api};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
