@@ -5,7 +5,7 @@ edition = "2024"
 default-run = "server"
 
 [dependencies]
-actix-web = "4.10.2"
+actix-web = "4.11.0"
 awc = { version = "3.6.0", optional = false }
 anyhow = { version = "1", optional = false }
 serde = { version = "1", features = ["derive"] }
